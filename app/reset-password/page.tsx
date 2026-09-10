@@ -108,7 +108,6 @@ export default function ResetPasswordPage() {
       });
       const payload = await res.json().catch(() => null);
 
-Arnaud Dossa, [10/09/2026 15:20]
 if (!res.ok || !payload?.success) {
         if (payload?.error?.toLowerCase().includes('expiré') || payload?.error?.toLowerCase().includes('invalide')) {
           setLinkState('invalid');
