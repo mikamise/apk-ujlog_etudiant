@@ -70,7 +70,7 @@ export function generateUploadSignature(params: Record<string, string | number>)
   if (!apiSecret) throw new Error('CLOUDINARY_API_SECRET manquant côté serveur.');
 
   const timestamp = Math.floor(Date.now() / 1000);
-  const fullParams = { ...params, timestamp };
+  const fullParams: Record<string, string | number> = { ...params, timestamp };
 
   const toSign = Object.keys(fullParams)
     .sort()
