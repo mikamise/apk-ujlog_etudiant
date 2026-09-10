@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -57,9 +58,30 @@ export default function ResetPasswordPage() {
   // réellement avant d'afficher le formulaire — sinon le lien est invalide/expiré.
   useEffect(() => {
     const supabase = createClient();
-    supabase.auth.getUser().then(({ data, error }) => {
-      setLinkState(!error && data.user ? 'valid' : 'invalid');
-    });
+    let cancelled = false;
+
+    const check = async (attemptsLeft: number): Promise<void> => {
+      const { data, error } = await supabase.auth.getUser();
+
+      if (!cancelled && !error && data.user) {
+        setLinkState('valid');
+        return;
+      }
+
+      if (cancelled) return;
+
+      if (attemptsLeft > 0) {
+        setTimeout(() => check(attemptsLeft - 1), 500);
+      } else {
+        setLinkState('invalid');
+      }
+    };
+
+    check(6);
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -86,7 +108,8 @@ export default function ResetPasswordPage() {
       });
       const payload = await res.json().catch(() => null);
 
-      if (!res.ok || !payload?.success) {
+Arnaud Dossa, [10/09/2026 15:20]
+if (!res.ok || !payload?.success) {
         if (payload?.error?.toLowerCase().includes('expiré') || payload?.error?.toLowerCase().includes('invalide')) {
           setLinkState('invalid');
         } else {
@@ -183,7 +206,9 @@ export default function ResetPasswordPage() {
             <input
               type={showPassword ? 'text' : 'password'}
               required
-              value={password}
+
+Arnaud Dossa, [10/09/2026 15:20]
+value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Entrez votre mot de passe"
               className="w-full px-4 py-3 pr-11 rounded-2xl border border-ujlog-border bg-white text-sm font-medium text-ujlog-ink placeholder:text-ujlog-ink-soft/60 focus:outline-none focus:ring-2 focus:ring-ujlog-primary/20 focus:border-ujlog-primary transition-all"
