@@ -45,7 +45,7 @@ export default function SauvegardesPage() {
                     levelCode: f.courses.level_code ? String(f.courses.level_code) : undefined,
                   } as SavedCourseItem;
                 })
-                .filter((c): c is SavedCourseItem => c !== null)
+                .filter((c: SavedCourseItem | null): c is SavedCourseItem => c !== null)
             : [];
           setApiFavorites(list);
           setLoading(false);
