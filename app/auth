@@ -1,4 +1,4 @@
-Arnaud Dossa, [10/09/2026 15:25]
+
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -98,7 +98,7 @@ export default function ConfirmAccountPage() {
           <p className="text-xs text-ujlog-ink-soft leading-relaxed mb-6 max-w-xs">
             Ce lien de confirmation n&apos;est plus valide — il a peut-être déjà été utilisé ou a expiré.
 
-Arnaud Dossa, [10/09/2026 15:25]
+
 Reconnectez-vous pour recevoir un nouveau lien.
           </p>
           <Link
