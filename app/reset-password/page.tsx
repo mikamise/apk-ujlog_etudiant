@@ -206,7 +206,7 @@ if (!res.ok || !payload?.success) {
               type={showPassword ? 'text' : 'password'}
               required
 
-Arnaud Dossa, [10/09/2026 15:20]
+
 value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Entrez votre mot de passe"
