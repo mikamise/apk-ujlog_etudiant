@@ -119,7 +119,7 @@ export async function POST(req: Request) {
       password: body.password,
       options: {
         data: { first_name: firstName, last_name: lastName },
-        redirectTo: appUrl ? `${appUrl}/auth/confirm` : undefined,
+        redirectTo: appUrl ? `${appUrl}/auth/callback` : undefined,
       },
     });
 

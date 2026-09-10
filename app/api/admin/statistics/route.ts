@@ -18,14 +18,23 @@ export async function GET(req: NextRequest) {
 
   const admin = createAdminClient();
 
-  const [{ count: studentsCount }, { count: delegatesCount }, { count: coursesCount }, { count: publishedCoursesCount }, { data: courses }] =
-    await Promise.all([
-      admin.from('profiles').select('id', { count: 'exact', head: true }).eq('role', 'student'),
-      admin.from('profiles').select('id', { count: 'exact', head: true }).eq('role', 'delegate'),
-      admin.from('courses').select('id', { count: 'exact', head: true }),
-      admin.from('courses').select('id', { count: 'exact', head: true }).eq('status', 'published'),
-      admin.from('courses').select('download_count'),
-    ]);
+  const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+
+  const [
+    { count: studentsCount },
+    { count: delegatesCount },
+    { count: coursesCount },
+    { count: publishedCoursesCount },
+    { count: recentPubCount },
+    { data: courses },
+  ] = await Promise.all([
+    admin.from('profiles').select('id', { count: 'exact', head: true }).eq('role', 'student'),
+    admin.from('profiles').select('id', { count: 'exact', head: true }).eq('role', 'delegate'),
+    admin.from('courses').select('id', { count: 'exact', head: true }),
+    admin.from('courses').select('id', { count: 'exact', head: true }).eq('status', 'published'),
+    admin.from('courses').select('id', { count: 'exact', head: true }).eq('status', 'published').gte('created_at', oneWeekAgo),
+    admin.from('courses').select('download_count'),
+  ]);
 
   const totalDownloads = (courses ?? []).reduce((sum: number, c: { download_count: number }) => sum + (c.download_count || 0), 0);
 
@@ -35,9 +44,15 @@ export async function GET(req: NextRequest) {
     activeStudentsByLevel[row.level_code] = (activeStudentsByLevel[row.level_code] || 0) + 1;
   }
 
+  const effectiveRecentPublications = (recentPubCount ?? 0) > 0 ? (recentPubCount ?? 0) : (publishedCoursesCount ?? 0);
+
   return NextResponse.json({
     success: true,
     data: {
+      totalStudents: studentsCount ?? 0,
+      totalDelegates: delegatesCount ?? 0,
+      totalCourses: coursesCount ?? 0,
+      recentPublicationsCount: effectiveRecentPublications,
       studentsCount: studentsCount ?? 0,
       delegatesCount: delegatesCount ?? 0,
       coursesCount: coursesCount ?? 0,

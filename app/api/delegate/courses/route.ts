@@ -17,7 +17,7 @@ export async function GET(req: NextRequest) {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from('courses')
-    .select('*, course_files(id, original_file_name, file_size_bytes)')
+    .select('*, semesters(semester_number), course_files(id, original_file_name, file_size_bytes)')
     .eq('author_id', session.userId)
     .order('created_at', { ascending: false });
 

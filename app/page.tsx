@@ -18,8 +18,11 @@ export default function HomePage() {
       window.matchMedia('(display-mode: standalone)').matches ||
       (window.navigator as any).standalone === true;
     const isMobileViewport = window.innerWidth < 768;
+    const hasSeenOnboarding =
+      typeof window !== 'undefined' &&
+      localStorage.getItem('ujlog_onboarding_done') === 'true';
 
-    if (isStandalone || isMobileViewport) {
+    if ((isStandalone || isMobileViewport) && !hasSeenOnboarding) {
       router.replace('/onboarding');
       return;
     }

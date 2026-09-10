@@ -30,10 +30,10 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    '/dashboard/:path*',
-    '/super-admin',
-    '/super-admin/:path*',
-    '/admin',
-    '/admin/:path*',
+    /*
+     * Intercepte toutes les requêtes applicatives pour rafraîchir les sessions Supabase,
+     * à l'exclusion des fichiers statiques (_next, images, manifest, service worker).
+     */
+    '/((?!_next/static|_next/image|favicon\\.ico|manifest\\.json|sw\\.js|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)',
   ],
 };

@@ -1,18 +1,22 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Eye, EyeOff, ArrowLeft, LogIn, UserPlus, AlertCircle } from 'lucide-react';
 import { ClientAuthService } from '@/lib/client-auth-service';
 
-export default function LoginPage() {
+function LoginFormContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState(() => {
+    const errorMsg = searchParams?.get('error');
+    return errorMsg ? decodeURIComponent(errorMsg) : '';
+  });
   const [isLoading, setIsLoading] = useState(false);
   const [needsConfirmation, setNeedsConfirmation] = useState(false);
   const [resendState, setResendState] = useState<'idle' | 'sending' | 'sent'>('idle');
@@ -43,10 +47,11 @@ export default function LoginPage() {
         return;
       }
 
-      // Redirection selon le rôle réel renvoyé par le serveur — jamais un choix
-      // arbitraire côté client, jamais toujours /dashboard quel que soit le rôle.
       const role = result.user?.role;
-      if (role === 'admin' || role === 'super_admin') {
+      const targetParam = searchParams?.get('redirectTo');
+      if (targetParam && targetParam.startsWith('/') && !targetParam.startsWith('//')) {
+        router.push(targetParam);
+      } else if (role === 'admin' || role === 'super_admin') {
         router.push('/super-admin');
       } else if (role === 'delegate' || result.user?.isDelegate) {
         router.push('/dashboard/delegue');
@@ -227,3 +232,18 @@ export default function LoginPage() {
     </div>
   );
 }
+
+export default function LoginPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-ujlog-cream flex items-center justify-center">
+          <div className="w-8 h-8 border-2 border-orange-600 border-t-transparent rounded-full animate-spin" />
+        </div>
+      }
+    >
+      <LoginFormContent />
+    </Suspense>
+  );
+}
+

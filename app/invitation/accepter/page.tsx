@@ -45,6 +45,7 @@ function AcceptInvitationForm() {
         return;
       }
       setSuccess(true);
+      if (data.role) setActivatedRole(data.role);
     } catch {
       setError('Une erreur technique est survenue.');
     } finally {
@@ -52,7 +53,12 @@ function AcceptInvitationForm() {
     }
   };
 
+  const [activatedRole, setActivatedRole] = useState<string | null>(null);
+
   if (success) {
+    const isStaffAdmin = activatedRole === 'admin' || activatedRole === 'super_admin';
+    const targetLogin = isStaffAdmin ? '/super-admin/login' : '/login';
+
     return (
       <div className="bg-ujlog-cream-2 w-full max-w-sm rounded-[32px] shadow-soft-warm border border-white/60 p-7 text-center space-y-4">
         <div className="w-14 h-14 bg-green-gradient text-white rounded-2xl flex items-center justify-center shadow-glow-green mx-auto">
@@ -60,13 +66,13 @@ function AcceptInvitationForm() {
         </div>
         <h1 className="font-display text-base font-bold text-ujlog-ink">Compte activé</h1>
         <p className="text-xs text-ujlog-ink-soft leading-relaxed">
-          Vérifiez votre boîte e-mail pour confirmer votre adresse, puis connectez-vous.
+          Votre compte officiel a été activé avec succès. Vous pouvez désormais vous connecter immédiatement avec vos identifiants.
         </p>
         <Link
-          href="/login"
+          href={targetLogin}
           className="inline-flex w-full items-center justify-center bg-terracotta-gradient text-white py-3 rounded-2xl font-bold text-xs shadow-glow-orange hover:brightness-110 transition-all"
         >
-          Aller à la connexion
+          {isStaffAdmin ? 'Accéder à la console Super Admin' : 'Aller à la connexion'}
         </Link>
       </div>
     );

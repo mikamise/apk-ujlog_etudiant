@@ -27,7 +27,7 @@ const securityHeaders = [
   },
   {
     key: 'Content-Security-Policy',
-    value: "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://picsum.photos https://res.cloudinary.com; font-src 'self' data:; connect-src 'self' https://api.cloudinary.com https://res.cloudinary.com; frame-ancestors 'self' https://ais-*.run.app https://*.google.com https://*.googleusercontent.com; object-src 'none'; base-uri 'self'; form-action 'self';",
+    value: "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://picsum.photos https://res.cloudinary.com https://*.supabase.co https://*.supabase.in; font-src 'self' data:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.cloudinary.com https://res.cloudinary.com; frame-ancestors 'self' https://ais-*.run.app https://*.google.com https://*.googleusercontent.com; object-src 'none'; base-uri 'self'; form-action 'self';",
   },
 ];
 
@@ -47,14 +47,26 @@ const nextConfig: NextConfig = {
       },
     ];
   },
-  // Allow access to remote image placeholder.
+  // Allow access to remote image placeholder and Cloudinary / Supabase storage.
   images: {
     remotePatterns: [
       {
         protocol: 'https',
         hostname: 'picsum.photos',
         port: '',
-        pathname: '/**', // This allows any path under the hostname
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'res.cloudinary.com',
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: '*.supabase.co',
+        port: '',
+        pathname: '/**',
       },
     ],
   },

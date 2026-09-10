@@ -10,8 +10,8 @@ const slides = [
   {
     key: 'intro',
     kind: 'brand' as const,
-    title: 'UJLOG-ÉTUDIANTS',
-    subtitle: 'Votre espace de stockage de cours universitaires',
+    title: 'UJLOG • GÉOGRAPHIE',
+    subtitle: 'Portail académique officiel du Département de Géographie de l\'Université Jean Lorougnon Guédé de Daloa',
   },
   {
     key: 'store',
@@ -19,9 +19,9 @@ const slides = [
     icon: FolderOpen,
     accent: 'orange' as const,
     title: (
-      <>Stockez et accédez <span className="text-ujlog-primary">à vos cours</span></>
+      <>Accédez à tous <span className="text-ujlog-primary">vos cours & TD</span></>
     ),
-    subtitle: 'Retrouvez tous vos cours, où que vous soyez, à tout moment.',
+    subtitle: 'Consultez et téléchargez les supports de cours magistraux, fiches de TD, cartes et annales du L1 au M2.',
   },
   {
     key: 'secure',
@@ -29,9 +29,9 @@ const slides = [
     icon: ShieldCheck,
     accent: 'green' as const,
     title: (
-      <>Sauvegardez <span className="text-ujlog-secondary">en toute sécurité</span></>
+      <>Résultats & PV <span className="text-ujlog-secondary">officiels vérifiés</span></>
     ),
-    subtitle: 'Vos cours sont sauvegardés et sécurisés dans votre espace personnel.',
+    subtitle: 'Consultez les procès-verbaux d\'examens et résultats de TD certifiés par vos délégués et l\'administration.',
   },
 ];
 
@@ -41,9 +41,18 @@ export default function OnboardingPage() {
   const isLast = step === slides.length - 1;
   const slide = slides[step];
 
+  const completeOnboarding = () => {
+    try {
+      localStorage.setItem('ujlog_onboarding_done', 'true');
+    } catch {
+      // ignore
+    }
+    router.push('/login');
+  };
+
   const goNext = () => {
     if (isLast) {
-      router.push('/login');
+      completeOnboarding();
     } else {
       setStep((s) => s + 1);
     }
@@ -66,7 +75,7 @@ export default function OnboardingPage() {
       <div className="relative z-10 flex justify-end p-4 sm:p-6">
         <button
           type="button"
-          onClick={() => router.push('/login')}
+          onClick={completeOnboarding}
           className="text-xs font-bold text-ujlog-ink-soft hover:text-ujlog-ink transition-colors cursor-pointer"
         >
           Passer
@@ -82,20 +91,31 @@ export default function OnboardingPage() {
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -24 }}
             transition={{ duration: 0.3, ease: 'easeOut' }}
-            className="w-full max-w-xs flex flex-col items-center text-center space-y-6"
+            className="w-full max-w-sm flex flex-col items-center text-center space-y-6"
           >
             {slide.kind === 'brand' ? (
               <>
-                <div className="w-28 h-28 rounded-[28px] bg-white shadow-card-hover border border-ujlog-border flex items-center justify-center p-4">
-                  <div className="relative w-full h-full">
-                    <Image src="/logo-ujlog.png" alt="Logo UJLOG" fill className="object-contain" referrerPolicy="no-referrer" />
+                <div className="flex items-center justify-center gap-3 p-3 bg-white rounded-3xl shadow-card-hover border border-ujlog-border">
+                  <div className="relative w-20 h-20 bg-orange-50/50 rounded-2xl p-2 border border-orange-100 flex items-center justify-center">
+                    <div className="relative w-full h-full">
+                      <Image src="/logo-ujlog.png" alt="Logo UJLOG" fill className="object-contain" referrerPolicy="no-referrer" priority />
+                    </div>
+                  </div>
+                  <div className="h-10 w-px bg-ujlog-border" />
+                  <div className="relative w-20 h-20 bg-green-50/50 rounded-2xl p-2 border border-green-100 flex items-center justify-center">
+                    <div className="relative w-full h-full">
+                      <Image src="/logo-geographie.png" alt="Logo Département de Géographie" fill className="object-contain" referrerPolicy="no-referrer" priority />
+                    </div>
                   </div>
                 </div>
                 <div className="space-y-2">
+                  <span className="inline-block px-3 py-1 bg-orange-100 text-ujlog-primary-dark font-black text-[10px] uppercase tracking-wider rounded-full">
+                    Daloa • Côte d&apos;Ivoire
+                  </span>
                   <h1 className="font-display text-2xl font-bold text-ujlog-ink tracking-tight">
                     {slide.title}
                   </h1>
-                  <p className="text-xs text-ujlog-ink-soft leading-relaxed">
+                  <p className="text-xs text-ujlog-ink-soft leading-relaxed max-w-xs mx-auto">
                     {slide.subtitle}
                   </p>
                 </div>

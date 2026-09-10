@@ -57,7 +57,7 @@ export async function POST(req: Request) {
     const { data: linkData, error } = await admin.auth.admin.generateLink({
       type: 'recovery',
       email: emailValidation.cleanEmail,
-      options: appUrl ? { redirectTo: `${appUrl}/reset-password` } : undefined,
+      options: appUrl ? { redirectTo: `${appUrl}/auth/callback?next=/reset-password` } : undefined,
     });
 
     if (!error && linkData?.properties?.action_link) {

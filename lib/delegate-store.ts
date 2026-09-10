@@ -32,25 +32,32 @@ export class DelegateStore {
       const payload = await res.json();
       if (!payload.success || !Array.isArray(payload.data)) return [];
       return payload.data.map(
-        (row: Record<string, unknown>): DelegateCourse => ({
-          id: String(row.id),
-          titre: String(row.title ?? ''),
-          description: String(row.description ?? ''),
-          matiere: String(row.subject_name ?? ''),
-          semestre: 1,
-          annee: String(row.academic_year_id ?? ''),
-          type: String(row.type ?? 'CM'),
-          enseignant: String(row.teacher_name ?? ''),
-          niveau: String(row.level_code ?? ''),
-          section: String(row.field_code ?? ''),
-          niveauCode: String(row.level_code ?? ''),
-          status: (row.status as DelegateCourse['status']) ?? 'published',
-          authorEmail: '',
-          authorName: '',
-          createdAt: String(row.created_at ?? ''),
-          updatedAt: String(row.created_at ?? ''),
-          telechargements: Number(row.download_count ?? 0),
-        })
+        (row: Record<string, unknown>): DelegateCourse => {
+          const semestersData = row.semesters as { semester_number?: number } | { semester_number?: number }[] | undefined;
+          const semesterNumber = Array.isArray(semestersData)
+            ? (semestersData[0]?.semester_number ?? 1)
+            : (semestersData?.semester_number ?? (row.semestre as number) ?? (row.semester_number as number) ?? 1);
+
+          return {
+            id: String(row.id),
+            titre: String(row.title ?? ''),
+            description: String(row.description ?? ''),
+            matiere: String(row.subject_name ?? ''),
+            semestre: Number(semesterNumber),
+            annee: String(row.academic_year_id ?? ''),
+            type: String(row.type ?? 'CM'),
+            enseignant: String(row.teacher_name ?? ''),
+            niveau: String(row.level_code ?? ''),
+            section: String(row.field_code ?? ''),
+            niveauCode: String(row.level_code ?? ''),
+            status: (row.status as DelegateCourse['status']) ?? 'published',
+            authorEmail: '',
+            authorName: '',
+            createdAt: String(row.created_at ?? ''),
+            updatedAt: String(row.created_at ?? ''),
+            telechargements: Number(row.download_count ?? 0),
+          };
+        }
       );
     } catch {
       return [];

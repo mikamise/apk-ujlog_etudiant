@@ -3,7 +3,7 @@
 import { useSearchParams } from 'next/navigation';
 import { Suspense, useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
-import { CourseItem, CourseResourceItemType } from '@/lib/course-adapter';
+import { CourseItem, CourseResourceItemType, mapCourseRowToItem } from '@/lib/course-adapter';
 import { useSavedCourses } from '@/hooks/use-saved-courses';
 import { downloadCourseFile, getDownloadRecord, openOfflineFile, cancelDownload, type DownloadStatus } from '@/lib/offline-downloads';
 import {
@@ -86,11 +86,13 @@ function CoursesContent() {
     let active = true;
 
     const load = () => {
-      fetch(`/api/courses?level=${encodeURIComponent(rawNiveau)}&limit=100`)
+      const fieldParam = parcoursId ? `&field=${encodeURIComponent(parcoursId.replace('-', '_'))}` : '';
+      fetch(`/api/courses?level=${encodeURIComponent(rawNiveau)}${fieldParam}&limit=100`)
         .then((res) => res.json())
         .then((payload) => {
           if (active) {
-            setCoursesData(payload.success && Array.isArray(payload.data) ? payload.data : []);
+            const rawList = payload.success && Array.isArray(payload.data) ? payload.data : [];
+            setCoursesData(rawList.map((row: Record<string, unknown>) => mapCourseRowToItem(row)));
             setIsLoading(false);
           }
         })
@@ -113,7 +115,7 @@ function CoursesContent() {
       active = false;
       window.removeEventListener('ujlog_courses_updated', handleUpdate);
     };
-  }, [rawNiveau]);
+  }, [rawNiveau, parcoursId]);
 
   const filteredCourses = useMemo(() => {
     if (!rawNiveau) return [];

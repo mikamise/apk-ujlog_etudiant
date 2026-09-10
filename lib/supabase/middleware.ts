@@ -34,14 +34,18 @@ export async function updateSession(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   const path = request.nextUrl.pathname;
-  const isPrivateRoute =
-    path.startsWith('/dashboard') ||
-    path.startsWith('/super-admin') && path !== '/super-admin/login';
+  const isSuperAdminRoute = path.startsWith('/super-admin') && path !== '/super-admin/login';
+  const isDashboardRoute = path.startsWith('/dashboard');
 
-  if (isPrivateRoute && !user) {
-    const redirectUrl = new URL('/login', request.url);
+  if (!user && (isSuperAdminRoute || isDashboardRoute)) {
+    const loginPath = isSuperAdminRoute ? '/super-admin/login' : '/login';
+    const redirectUrl = new URL(loginPath, request.url);
     redirectUrl.searchParams.set('redirectTo', path);
-    return NextResponse.redirect(redirectUrl);
+    const redirectResponse = NextResponse.redirect(redirectUrl);
+    supabaseResponse.cookies.getAll().forEach((c) => {
+      redirectResponse.cookies.set(c.name, c.value, c);
+    });
+    return redirectResponse;
   }
 
   return supabaseResponse;

@@ -1,6 +1,13 @@
 import { Resend } from 'resend';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+function getResendClient(): Resend | null {
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) {
+    return null;
+  }
+  return new Resend(apiKey);
+}
+
 const FROM = process.env.RESEND_FROM_EMAIL || 'UJLOG Étudiant <onboarding@resend.dev>';
 
 function wrapper(title: string, bodyHtml: string, ctaLabel?: string, ctaUrl?: string) {
@@ -30,6 +37,12 @@ function wrapper(title: string, bodyHtml: string, ctaLabel?: string, ctaUrl?: st
 }
 
 export async function sendVerificationEmail(to: string, confirmUrl: string) {
+  const resend = getResendClient();
+  if (!resend) {
+    console.warn('[Email] RESEND_API_KEY non configurée. Envoi d\'e-mail ignoré.');
+    return { data: null, error: { message: 'RESEND_API_KEY non configurée' } } as any;
+  }
+
   return resend.emails.send({
     from: FROM,
     to,
@@ -44,6 +57,12 @@ export async function sendVerificationEmail(to: string, confirmUrl: string) {
 }
 
 export async function sendPasswordResetEmail(to: string, resetUrl: string) {
+  const resend = getResendClient();
+  if (!resend) {
+    console.warn('[Email] RESEND_API_KEY non configurée. Envoi d\'e-mail ignoré.');
+    return { data: null, error: { message: 'RESEND_API_KEY non configurée' } } as any;
+  }
+
   return resend.emails.send({
     from: FROM,
     to,
@@ -63,6 +82,12 @@ export async function sendRoleInvitationEmail(
   activateUrl: string,
   expiresAt: Date
 ) {
+  const resend = getResendClient();
+  if (!resend) {
+    console.warn('[Email] RESEND_API_KEY non configurée. Envoi d\'e-mail ignoré.');
+    return { data: null, error: { message: 'RESEND_API_KEY non configurée' } } as any;
+  }
+
   const roleLabel = { delegate: 'Délégué', admin: 'Administrateur', super_admin: 'Super Administrateur' }[role];
   return resend.emails.send({
     from: FROM,
@@ -89,6 +114,12 @@ export async function sendCoursePublishedEmail(
   to: string,
   data: { courseTitle: string; subjectName: string; levelLabel: string; courseUrl: string }
 ) {
+  const resend = getResendClient();
+  if (!resend) {
+    console.warn('[Email] RESEND_API_KEY non configurée. Envoi d\'e-mail ignoré.');
+    return { data: null, error: { message: 'RESEND_API_KEY non configurée' } } as any;
+  }
+
   return resend.emails.send({
     from: FROM,
     to,
@@ -105,6 +136,12 @@ export async function sendCoursePublishedEmail(
 }
 
 export async function sendAnnouncementEmail(to: string, data: { title: string; message: string }) {
+  const resend = getResendClient();
+  if (!resend) {
+    console.warn('[Email] RESEND_API_KEY non configurée. Envoi d\'e-mail ignoré.');
+    return { data: null, error: { message: 'RESEND_API_KEY non configurée' } } as any;
+  }
+
   return resend.emails.send({
     from: FROM,
     to,

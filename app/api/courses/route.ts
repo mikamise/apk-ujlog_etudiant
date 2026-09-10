@@ -36,7 +36,7 @@ export async function GET(req: NextRequest) {
   const supabase = await createClient();
   let query = supabase
     .from('courses')
-    .select('*, course_files(id, original_file_name, mime_type, file_size_bytes)', { count: 'exact' })
+    .select('*, semesters(semester_number), course_files(id, original_file_name, mime_type, file_size_bytes)', { count: 'exact' })
     .eq('status', 'published');
 
   if (level) query = query.eq('level_code', level.toLowerCase());

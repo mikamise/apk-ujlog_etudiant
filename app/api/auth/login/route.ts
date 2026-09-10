@@ -47,10 +47,9 @@ export async function POST(req: Request) {
     });
     if (accountRateLimit) return accountRateLimit;
 
-    const passwordValidation = validatePassword(password);
-    if (!passwordValidation.isValid) {
+    if (!password || typeof password !== 'string' || password.trim().length === 0) {
       return NextResponse.json(
-        { success: false, error: passwordValidation.error || 'Mot de passe invalide.' },
+        { success: false, error: 'Veuillez renseigner votre mot de passe.' },
         { status: 400 }
       );
     }

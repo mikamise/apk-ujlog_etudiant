@@ -82,6 +82,120 @@ export default function SuperAdminDashboardPage() {
     }
   }, [router]);
 
+function mapStudentRowToAccount(row: any): StudentAccount {
+  const profile = Array.isArray(row.student_profiles) ? row.student_profiles[0] : row.student_profiles;
+  const levelCode = String(profile?.level_code || row.levelCode || 'l1').toLowerCase();
+  const levelLabels: Record<string, string> = {
+    l1: 'Licence 1',
+    l2: 'Licence 2',
+    l3: 'Licence 3',
+    m1: 'Master 1',
+    m2: 'Master 2',
+    'licence 1': 'Licence 1',
+    'licence 2': 'Licence 2',
+    'licence 3': 'Licence 3',
+    'master 1': 'Master 1',
+    'master 2': 'Master 2',
+  };
+
+  const statusMap: Record<string, 'actif' | 'suspendu' | 'en_attente'> = {
+    active: 'actif',
+    actif: 'actif',
+    suspended: 'suspendu',
+    suspendu: 'suspendu',
+    pending: 'en_attente',
+    en_attente: 'en_attente',
+  };
+
+  return {
+    id: row.id,
+    studentId: profile?.student_id || row.studentId || (typeof row.id === 'string' ? row.id.slice(0, 8).toUpperCase() : 'N/A'),
+    lastName: row.last_name || row.lastName || '',
+    firstName: row.first_name || row.firstName || '',
+    email: row.email || '',
+    level: levelLabels[levelCode] || row.level || 'Licence 1',
+    field: profile?.field_code || row.field || 'Tronc commun',
+    academicYear: profile?.academic_year_id || row.academicYear || '2025-2026',
+    registrationDate: row.created_at || row.registrationDate || new Date().toISOString(),
+    status: statusMap[row.status] || 'actif',
+    role: 'student',
+    history: Array.isArray(row.history) ? row.history : [],
+  };
+}
+
+function mapDelegateRowToRecord(row: any): DelegateManagementRecord {
+  const profile = Array.isArray(row.profiles) ? row.profiles[0] : row.profiles;
+  const firstName = profile?.first_name || '';
+  const lastName = profile?.last_name || '';
+  const fullName = `${firstName} ${lastName}`.trim() || row.name || 'Délégué UJLOG';
+  const levelCode = String(row.level_code || row.levelCode || 'l1').toLowerCase();
+  const levelLabels: Record<string, string> = {
+    l1: 'Licence 1',
+    l2: 'Licence 2',
+    l3: 'Licence 3',
+    m1: 'Master 1',
+    m2: 'Master 2',
+  };
+
+  return {
+    id: row.id,
+    studentId: row.student_id || row.studentId || (typeof row.user_id === 'string' ? row.user_id.slice(0, 8).toUpperCase() : 'N/A'),
+    email: profile?.email || row.email || '',
+    name: fullName,
+    level: levelLabels[levelCode] || row.level || 'Licence 1',
+    section: row.field_code || row.section || 'Tronc commun',
+    levelCode: levelCode,
+    academicYear: row.academic_year_id || row.academicYear || '2025-2026',
+    status: row.status === 'active' ? 'active' : (row.status === 'revoked' ? 'revoked' : 'pending'),
+    activationCode: row.activation_code || row.activationCode || 'ACTIF',
+    permissions: Array.isArray(row.permissions) ? row.permissions : ['PUBLISH_COURSES', 'VIEW_STUDENTS'],
+    createdAt: row.assigned_at || row.createdAt || new Date().toISOString(),
+    activatedAt: row.assigned_at || row.activatedAt,
+    revokedAt: row.revoked_at || row.revokedAt,
+    history: Array.isArray(row.history) ? row.history : [],
+  };
+}
+
+function mapCourseRowToDelegateCourse(row: any): CourseItem {
+  const semestersData = row.semesters as { semester_number?: number } | { semester_number?: number }[] | undefined;
+  const semesterNumber = Array.isArray(semestersData)
+    ? (semestersData[0]?.semester_number ?? 1)
+    : (semestersData?.semester_number ?? row.semestre ?? row.semester_number ?? 1);
+
+  const levelCode = String(row.level_code ?? row.niveauCode ?? 'l1').toLowerCase();
+  const levelLabels: Record<string, string> = {
+    l1: 'Licence 1',
+    l2: 'Licence 2',
+    l3: 'Licence 3',
+    m1: 'Master 1',
+    m2: 'Master 2',
+  };
+
+  return {
+    id: String(row.id),
+    titre: String(row.title ?? row.titre ?? ''),
+    description: String(row.description ?? ''),
+    matiere: String(row.subject_name ?? row.matiere ?? 'Géographie'),
+    semestre: Number(semesterNumber),
+    annee: String(row.academic_year_id ?? row.annee ?? '2025-2026'),
+    type: String(row.type ?? 'CM'),
+    enseignant: String(row.teacher_name ?? row.enseignant ?? 'Non renseigné'),
+    niveau: row.niveau ?? levelLabels[levelCode] ?? 'Licence 1',
+    section: String(row.field_code ?? row.section ?? 'Tronc commun'),
+    niveauCode: levelCode,
+    status: (row.status as any) ?? 'published',
+    fileName: row.file_name ?? row.fileName,
+    fileSize: row.file_size_bytes ? `${Math.round((row.file_size_bytes / 1024 / 1024) * 10) / 10} Mo` : (row.fileSize ?? '2.4 Mo'),
+    fileMimeType: row.file_mime_type ?? row.fileMimeType,
+    documentUrl: row.documentUrl ?? (row.file_path ? `/api/courses/${row.id}/download` : undefined),
+    authorEmail: row.authorEmail ?? 'admin@ujlog.ci',
+    authorName: row.authorName ?? 'Administration UJLOG',
+    createdAt: String(row.created_at ?? row.createdAt ?? new Date().toISOString()),
+    updatedAt: String(row.updated_at ?? row.updatedAt ?? new Date().toISOString()),
+    telechargements: Number(row.download_count ?? row.telechargements ?? 0),
+  };
+}
+
   // Load state from server APIs with fallback
   const loadDashboardData = useCallback(async () => {
     try {
@@ -105,7 +219,7 @@ export default function SuperAdminDashboardPage() {
       if (studentsRes.status === 'fulfilled' && studentsRes.value.ok) {
         const payload = await studentsRes.value.json();
         if (payload.success && Array.isArray(payload.data?.students)) {
-          setStudents(payload.data.students);
+          setStudents(payload.data.students.map(mapStudentRowToAccount));
         } else {
           setStudents(AdminStore.getStudents());
         }
@@ -116,7 +230,7 @@ export default function SuperAdminDashboardPage() {
       if (delegatesRes.status === 'fulfilled' && delegatesRes.value.ok) {
         const payload = await delegatesRes.value.json();
         if (payload.success && Array.isArray(payload.delegates)) {
-          setDelegates(payload.delegates);
+          setDelegates(payload.delegates.map(mapDelegateRowToRecord));
         } else {
           setDelegates(AdminStore.getDelegates());
         }
@@ -127,7 +241,7 @@ export default function SuperAdminDashboardPage() {
       if (coursesRes.status === 'fulfilled' && coursesRes.value.ok) {
         const payload = await coursesRes.value.json();
         if (payload.success && Array.isArray(payload.data)) {
-          setCourses(payload.data);
+          setCourses(payload.data.map(mapCourseRowToDelegateCourse));
         } else {
           setCourses(AdminStore.getAllCourses());
         }

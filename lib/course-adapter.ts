@@ -39,18 +39,22 @@ const DB_TYPE_TO_UI_TYPE: Record<string, CourseResourceItemType> = {
 
 /** Convertit une ligne "courses" issue de Supabase vers le format attendu par l'UI existante. */
 export function mapCourseRowToItem(row: Record<string, unknown>): CourseItem {
-  const semesterNumber = (row.semesters as { semester_number?: number } | undefined)?.semester_number ?? 1;
+  const semestersData = row.semesters as { semester_number?: number } | { semester_number?: number }[] | undefined;
+  const semesterNumber = Array.isArray(semestersData)
+    ? (semestersData[0]?.semester_number ?? 1)
+    : (semestersData?.semester_number ?? (row.semestre as number) ?? (row.semester_number as number) ?? 1);
+
   return {
     id: String(row.id),
-    titre: String(row.title ?? ''),
-    matiere: String(row.subject_name ?? ''),
-    semestre: semesterNumber,
-    annee: String(row.academic_year_id ?? ''),
-    type: DB_TYPE_TO_UI_TYPE[String(row.type)] ?? 'CM',
-    enseignant: String(row.teacher_name ?? 'Non renseigné'),
+    titre: String(row.title ?? row.titre ?? ''),
+    matiere: String(row.subject_name ?? row.matiere ?? ''),
+    semestre: Number(semesterNumber),
+    annee: String(row.academic_year_id ?? row.annee ?? ''),
+    type: DB_TYPE_TO_UI_TYPE[String(row.type).toLowerCase()] ?? (row.type as CourseResourceItemType) ?? 'CM',
+    enseignant: String(row.teacher_name ?? row.enseignant ?? 'Non renseigné'),
     description: String(row.description ?? ''),
-    telechargements: Number(row.download_count ?? 0),
-    dateAjout: String(row.created_at ?? ''),
-    niveauCode: row.level_code ? String(row.level_code) : undefined,
+    telechargements: Number(row.download_count ?? row.telechargements ?? 0),
+    dateAjout: String(row.created_at ?? row.dateAjout ?? ''),
+    niveauCode: row.level_code ? String(row.level_code) : (row.niveauCode as string | undefined),
   };
 }
