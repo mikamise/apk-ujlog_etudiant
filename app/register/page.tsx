@@ -518,11 +518,6 @@ export default function RegisterPage() {
         </div>
       </main>
 
-      {/* /* Footer
-      <footer className="py-3 text-center text-[10px] text-ujlog-ink-soft/70 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
-        © 2026 Université Jean Lorougnon Guédé • Département de Géographie. Tous droits réservés.
-      </footer> */}
-
     </div>
   );
 }
