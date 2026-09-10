@@ -112,14 +112,15 @@ export async function POST(req: Request) {
     // (plutôt que signUp classique) pour récupérer le lien de confirmation
     // nous-mêmes et l'envoyer via Resend : le mailer intégré de Supabase
     // (gratuit) est très limité en volume et peu fiable pour un vrai usage.
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || '';
+    const origin = req.headers.get('origin') || (req.headers.get('referer') ? new URL(req.headers.get('referer')!).origin : '');
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || origin || 'http://localhost:3000';
     const { data: signUpData, error: signUpError } = await admin.auth.admin.generateLink({
       type: 'signup',
       email: cleanEmail,
       password: body.password,
       options: {
         data: { first_name: firstName, last_name: lastName },
-        redirectTo: appUrl ? `${appUrl}/auth/callback` : undefined,
+        redirectTo: `${appUrl}/auth/callback`,
       },
     });
 

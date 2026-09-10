@@ -41,19 +41,61 @@ export async function GET(request: Request) {
     }
   }
 
-  if (token_hash && type) {
-    const { error } = await supabase.auth.verifyOtp({
-      type: type as any,
+  if (token_hash) {
+    const effectiveType = type || 'signup';
+    let { error } = await supabase.auth.verifyOtp({
+      type: effectiveType as any,
       token_hash,
     });
+
+    if (error && !type) {
+      // Si type n'était pas précisé, retenter avec 'email' puis 'recovery'
+      const retryEmail = await supabase.auth.verifyOtp({ type: 'email' as any, token_hash });
+      if (!retryEmail.error) error = null;
+      else {
+        const retryRecovery = await supabase.auth.verifyOtp({ type: 'recovery' as any, token_hash });
+        if (!retryRecovery.error) {
+          error = null;
+          return NextResponse.redirect(new URL('/reset-password', requestUrl.origin));
+        }
+      }
+    }
+
     if (!error) {
-      if (type === 'recovery') {
+      if (effectiveType === 'recovery') {
         return NextResponse.redirect(new URL('/reset-password', requestUrl.origin));
       }
       return NextResponse.redirect(new URL(next || '/dashboard', requestUrl.origin));
     }
   }
 
-  // Échec de validation du jeton
-  return NextResponse.redirect(new URL('/login?error=Lien+invalide+ou+expire', requestUrl.origin));
+  // Si ni code ni token_hash n'étaient présents dans les paramètres de requête côté serveur,
+  // les jetons sont peut-être dans le fragment hash (#access_token=...&type=signup|recovery)
+  // que le navigateur n'envoie jamais au serveur par HTTP.
+  const htmlBridge = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Vérification UJLOG Étudiant...</title>
+</head>
+<body style="font-family:sans-serif;background:#fff8f1;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;">
+  <p style="color:#7c2d12;font-weight:bold;font-size:14px;">Vérification de votre compte en cours...</p>
+  <script>
+    if (window.location.hash) {
+      var hash = window.location.hash;
+      if (hash.indexOf('type=recovery') !== -1) {
+        window.location.replace('/reset-password' + hash);
+      } else {
+        window.location.replace('/auth/confirm' + hash);
+      }
+    } else {
+      window.location.replace('/login?error=Lien+invalide+ou+expire');
+    }
+  </script>
+</body>
+</html>`;
+
+  return new NextResponse(htmlBridge, {
+    headers: { 'Content-Type': 'text/html; charset=utf-8' },
+  });
 }

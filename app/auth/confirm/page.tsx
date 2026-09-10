@@ -1,11 +1,11 @@
 
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { useRouter } from 'next/navigation';
-import { ArrowLeft, CheckCircle, AlertTriangle, Loader2 } from 'lucide-react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { ArrowLeft, CheckCircle, AlertTriangle, Loader2, Mail, Send, LogIn } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 
 type ConfirmState = 'checking' | 'success' | 'invalid';
@@ -37,51 +37,144 @@ function Shell({ children }: { children: React.ReactNode }) {
   );
 }
 
-export default function ConfirmAccountPage() {
+function ConfirmAccountContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [state, setState] = useState<ConfirmState>('checking');
+  const [resendEmail, setResendEmail] = useState('');
+  const [resendStatus, setResendStatus] = useState<'idle' | 'sending' | 'sent'>('idle');
+  const [customError, setCustomError] = useState('');
 
-  // Le lien reçu par e-mail (Supabase) établit une session côté navigateur
-  // dès le chargement de cette page (le client Supabase détecte le token
-  // dans l'URL automatiquement). Cette détection est asynchrone : on
-  // réessaie donc plusieurs fois avant de conclure que le lien est invalide.
   useEffect(() => {
     const supabase = createClient();
     let cancelled = false;
 
-    const check = async (attemptsLeft: number): Promise<void> => {
-      const { data, error } = await supabase.auth.getUser();
+    const processConfirmation = async () => {
+      // 1. Lire paramètres de requête et hash URL
+      const token_hash = searchParams?.get('token_hash');
+      const code = searchParams?.get('code');
+      const type = searchParams?.get('type') || 'signup';
+      const errorParam = searchParams?.get('error') || searchParams?.get('error_description');
 
-      if (!cancelled && !error && data.user) {
-        setState('success');
-        setTimeout(() => {
-          if (!cancelled) router.push('/dashboard');
-        }, 1800);
-        return;
+      // 2. Hash fragment (#access_token=...&refresh_token=...)
+      let hashAccessToken: string | null = null;
+      let hashRefreshToken: string | null = null;
+      if (typeof window !== 'undefined' && window.location.hash) {
+        const hash = new URLSearchParams(window.location.hash.substring(1));
+        hashAccessToken = hash.get('access_token');
+        hashRefreshToken = hash.get('refresh_token');
+      }
+
+      // Si Supabase a renvoyé un token_hash (flux PKCE direct)
+      if (token_hash) {
+        try {
+          const { data, error } = await supabase.auth.verifyOtp({
+            token_hash,
+            type: (type as any) || 'signup',
+          });
+          if (!cancelled && !error && data.user) {
+            setState('success');
+            setTimeout(() => {
+              if (!cancelled) router.push('/dashboard');
+            }, 1500);
+            return;
+          }
+        } catch {
+          // continue fallback
+        }
+      }
+
+      // Si Supabase a renvoyé un code PKCE
+      if (code) {
+        try {
+          const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+          if (!cancelled && !error && data.user) {
+            setState('success');
+            setTimeout(() => {
+              if (!cancelled) router.push('/dashboard');
+            }, 1500);
+            return;
+          }
+        } catch {
+          // continue fallback
+        }
+      }
+
+      // Si les jetons sont dans le hash (#access_token=...)
+      if (hashAccessToken && hashRefreshToken) {
+        try {
+          const { data, error } = await supabase.auth.setSession({
+            access_token: hashAccessToken,
+            refresh_token: hashRefreshToken,
+          });
+          if (!cancelled && !error && data.user) {
+            setState('success');
+            setTimeout(() => {
+              if (!cancelled) router.push('/dashboard');
+            }, 1500);
+            return;
+          }
+        } catch {
+          // continue fallback
+        }
+      }
+
+      // Vérifier si une session est déjà active
+      try {
+        const { data, error } = await supabase.auth.getUser();
+        if (!cancelled && !error && data.user) {
+          setState('success');
+          setTimeout(() => {
+            if (!cancelled) router.push('/dashboard');
+          }, 1500);
+          return;
+        }
+      } catch {
+        // continue
       }
 
       if (cancelled) return;
 
-      if (attemptsLeft > 0) {
-        setTimeout(() => check(attemptsLeft - 1), 500);
-      } else {
-        setState('invalid');
+      if (errorParam) {
+        setCustomError(decodeURIComponent(errorParam));
       }
+      setState('invalid');
     };
 
-    check(6);
+    processConfirmation();
 
     return () => {
       cancelled = true;
     };
-  }, [router]);
+  }, [router, searchParams]);
+
+  const handleResend = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!resendEmail.trim()) return;
+
+    setResendStatus('sending');
+    try {
+      await fetch('/api/auth/resend-confirmation', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: resendEmail.trim().toLowerCase() }),
+      });
+    } catch {
+      // ignore
+    } finally {
+      setResendStatus('sent');
+    }
+  };
 
   if (state === 'checking') {
     return (
       <Shell>
         <div className="flex flex-col items-center text-center py-6 space-y-3">
-          <Loader2 className="w-6 h-6 text-ujlog-primary animate-spin" />
-          <p className="text-xs text-ujlog-ink-soft font-medium">Confirmation de votre compte en cours...</p>
+          <Loader2 className="w-8 h-8 text-ujlog-primary animate-spin" />
+          <h2 className="font-display font-bold text-sm text-ujlog-ink">Validation de votre lien...</h2>
+          <p className="text-xs text-ujlog-ink-soft font-medium max-w-xs">
+            Vérification de l&apos;adresse e-mail et initialisation de votre session sécurisée.
+          </p>
         </div>
       </Shell>
     );
@@ -95,18 +188,56 @@ export default function ConfirmAccountPage() {
             <AlertTriangle className="w-6 h-6" />
           </div>
           <h1 className="font-display text-lg font-bold text-ujlog-ink mb-2">Lien invalide ou expiré</h1>
-          <p className="text-xs text-ujlog-ink-soft leading-relaxed mb-6 max-w-xs">
-            Ce lien de confirmation n&apos;est plus valide — il a peut-être déjà été utilisé ou a expiré.
-
-
-Reconnectez-vous pour recevoir un nouveau lien.
+          <p className="text-xs text-ujlog-ink-soft leading-relaxed mb-4 max-w-xs">
+            {customError || 'Ce lien de confirmation n’est plus actif. Il a peut-être déjà été validé, ou son délai de validité est écoulé.'}
           </p>
-          <Link
-            href="/login"
-            className="w-full bg-ujlog-primary-dark text-white py-3 rounded-2xl font-bold text-sm hover:brightness-105 transition-all text-center block"
-          >
-            Aller à la connexion
-          </Link>
+
+          <div className="w-full space-y-3 pt-2">
+            {/* Action 1: Se connecter directement si déjà validé */}
+            <Link
+              href="/login"
+              className="w-full bg-terracotta-gradient text-white py-3 rounded-2xl font-bold text-sm hover:brightness-105 transition-all text-center flex items-center justify-center gap-2 shadow-glow-orange cursor-pointer"
+            >
+              <LogIn className="w-4 h-4" />
+              <span>Tenter de vous connecter</span>
+            </Link>
+
+            {/* Action 2: Renvoyer un nouveau lien directement depuis cette page */}
+            <div className="p-4 bg-ujlog-cream/80 rounded-2xl border border-ujlog-border text-left mt-3">
+              <p className="text-xs font-bold text-ujlog-ink mb-1 flex items-center gap-1.5">
+                <Mail className="w-3.5 h-3.5 text-ujlog-primary-dark" />
+                <span>Recevoir un nouveau lien</span>
+              </p>
+              <p className="text-[11px] text-ujlog-ink-soft mb-3">
+                Saisissez votre e-mail pour générer immédiatement un lien valide.
+              </p>
+
+              {resendStatus === 'sent' ? (
+                <div className="p-2.5 bg-green-50 text-green-800 rounded-xl text-xs font-semibold border border-green-200 text-center">
+                  ✓ Nouvel e-mail envoyé ! Vérifiez votre boîte de réception.
+                </div>
+              ) : (
+                <form onSubmit={handleResend} className="space-y-2">
+                  <input
+                    type="email"
+                    required
+                    value={resendEmail}
+                    onChange={(e) => setResendEmail(e.target.value)}
+                    placeholder="votre.email@ujlog.ci"
+                    className="w-full px-3 py-2.5 rounded-xl border border-ujlog-border bg-white text-xs font-medium text-ujlog-ink placeholder:text-ujlog-ink-soft/60 focus:outline-none focus:ring-2 focus:ring-ujlog-primary/20"
+                  />
+                  <button
+                    type="submit"
+                    disabled={resendStatus === 'sending'}
+                    className="w-full bg-white border border-ujlog-border hover:border-ujlog-primary-dark text-ujlog-ink font-bold text-xs py-2 rounded-xl flex items-center justify-center gap-1.5 transition-colors cursor-pointer disabled:opacity-60"
+                  >
+                    <Send className="w-3 h-3 text-ujlog-primary-dark" />
+                    <span>{resendStatus === 'sending' ? 'Envoi en cours...' : 'Renvoyer le lien'}</span>
+                  </button>
+                </form>
+              )}
+            </div>
+          </div>
         </div>
       </Shell>
     );
@@ -114,16 +245,33 @@ Reconnectez-vous pour recevoir un nouveau lien.
 
   return (
     <Shell>
-      <div className="text-center flex flex-col items-center">
+      <div className="text-center flex flex-col items-center py-2">
         <div className="w-14 h-14 bg-ujlog-secondary-50 text-ujlog-secondary rounded-2xl flex items-center justify-center mb-4 border border-ujlog-secondary-100">
-          <CheckCircle className="w-6 h-6" />
+          <CheckCircle className="w-7 h-7" />
         </div>
-        <h1 className="font-display text-lg font-bold text-ujlog-ink mb-2">Compte confirmé !</h1>
-        <p className="text-xs text-ujlog-ink-soft leading-relaxed mb-6">
-          Votre adresse e-mail a bien été vérifiée. Redirection vers votre tableau de bord...
+        <h1 className="font-display text-lg font-bold text-ujlog-ink mb-1.5">Compte confirmé !</h1>
+        <p className="text-xs text-ujlog-ink-soft leading-relaxed mb-4">
+          Votre adresse e-mail a été vérifiée avec succès. Redirection vers votre tableau de bord...
         </p>
         <Loader2 className="w-5 h-5 text-ujlog-primary animate-spin" />
       </div>
     </Shell>
+  );
+}
+
+export default function ConfirmAccountPage() {
+  return (
+    <Suspense
+      fallback={
+        <Shell>
+          <div className="flex flex-col items-center text-center py-6 space-y-3">
+            <Loader2 className="w-6 h-6 text-ujlog-primary animate-spin" />
+            <p className="text-xs text-ujlog-ink-soft font-medium">Chargement...</p>
+          </div>
+        </Shell>
+      }
+    >
+      <ConfirmAccountContent />
+    </Suspense>
   );
 }

@@ -52,12 +52,13 @@ export async function POST(req: Request) {
     });
     if (accountRateLimit) return accountRateLimit;
 
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || '';
+    const origin = req.headers.get('origin') || (req.headers.get('referer') ? new URL(req.headers.get('referer')!).origin : '');
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || origin || 'http://localhost:3000';
     const admin = createAdminClient();
     const { data: linkData, error } = await admin.auth.admin.generateLink({
       type: 'recovery',
       email: emailValidation.cleanEmail,
-      options: appUrl ? { redirectTo: `${appUrl}/auth/callback?next=/reset-password` } : undefined,
+      options: { redirectTo: `${appUrl}/auth/callback?next=/reset-password` },
     });
 
     if (!error && linkData?.properties?.action_link) {

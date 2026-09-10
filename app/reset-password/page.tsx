@@ -53,31 +53,87 @@ export default function ResetPasswordPage() {
 
   const passwordEvaluation = evaluatePassword(password);
 
-  // Le lien reçu par e-mail (Supabase) établit une session "recovery" temporaire
-  // côté navigateur au chargement de cette page. On vérifie qu'elle existe
-  // réellement avant d'afficher le formulaire — sinon le lien est invalide/expiré.
+  // Le lien de réinitialisation reçu par e-mail peut transmettre un token_hash,
+  // un code PKCE ou des jetons dans le fragment hash (#access_token=...).
+  // On échange activement ces jetons pour valider la session recovery.
   useEffect(() => {
     const supabase = createClient();
     let cancelled = false;
 
-    const check = async (attemptsLeft: number): Promise<void> => {
-      const { data, error } = await supabase.auth.getUser();
+    const initRecovery = async () => {
+      // 1. Lire paramètres URL
+      const searchParams = new URLSearchParams(window.location.search);
+      const code = searchParams.get('code');
+      const token_hash = searchParams.get('token_hash');
 
-      if (!cancelled && !error && data.user) {
-        setLinkState('valid');
-        return;
+      // 2. Hash fragment (#access_token=...&type=recovery)
+      let hashAccessToken: string | null = null;
+      let hashRefreshToken: string | null = null;
+      if (window.location.hash) {
+        const hash = new URLSearchParams(window.location.hash.substring(1));
+        hashAccessToken = hash.get('access_token');
+        hashRefreshToken = hash.get('refresh_token');
       }
 
-      if (cancelled) return;
+      if (token_hash) {
+        try {
+          const { data, error } = await supabase.auth.verifyOtp({
+            token_hash,
+            type: 'recovery',
+          });
+          if (!cancelled && !error && data.user) {
+            setLinkState('valid');
+            return;
+          }
+        } catch {
+          // continue fallback
+        }
+      }
 
-      if (attemptsLeft > 0) {
-        setTimeout(() => check(attemptsLeft - 1), 500);
-      } else {
+      if (code) {
+        try {
+          const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+          if (!cancelled && !error && data.user) {
+            setLinkState('valid');
+            return;
+          }
+        } catch {
+          // continue fallback
+        }
+      }
+
+      if (hashAccessToken && hashRefreshToken) {
+        try {
+          const { data, error } = await supabase.auth.setSession({
+            access_token: hashAccessToken,
+            refresh_token: hashRefreshToken,
+          });
+          if (!cancelled && !error && data.user) {
+            setLinkState('valid');
+            return;
+          }
+        } catch {
+          // continue fallback
+        }
+      }
+
+      // Vérifier si la session recovery existe déjà (ex. posée par /auth/callback)
+      try {
+        const { data, error } = await supabase.auth.getUser();
+        if (!cancelled && !error && data.user) {
+          setLinkState('valid');
+          return;
+        }
+      } catch {
+        // continue
+      }
+
+      if (!cancelled) {
         setLinkState('invalid');
       }
     };
 
-    check(6);
+    initRecovery();
 
     return () => {
       cancelled = true;

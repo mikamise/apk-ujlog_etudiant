@@ -44,17 +44,37 @@ export async function POST(req: Request) {
     });
     if (accountRateLimit) return accountRateLimit;
 
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || '';
+    const origin = req.headers.get('origin') || (req.headers.get('referer') ? new URL(req.headers.get('referer')!).origin : '');
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || origin || 'http://localhost:3000';
     const admin = createAdminClient();
-    const { data: linkData, error } = await admin.auth.admin.generateLink({
+
+    let actionLink: string | null = null;
+    let genError: any = null;
+
+    const resSignup = await admin.auth.admin.generateLink({
       type: 'signup',
       email: emailValidation.cleanEmail,
-      options: appUrl ? { redirectTo: `${appUrl}/auth/callback` } : undefined,
+      options: { redirectTo: `${appUrl}/auth/callback` },
     });
 
-    if (!error && linkData?.properties?.action_link) {
+    if (!resSignup.error && resSignup.data?.properties?.action_link) {
+      actionLink = resSignup.data.properties.action_link;
+    } else {
+      const resMagic = await admin.auth.admin.generateLink({
+        type: 'magiclink',
+        email: emailValidation.cleanEmail,
+        options: { redirectTo: `${appUrl}/auth/callback` },
+      });
+      if (!resMagic.error && resMagic.data?.properties?.action_link) {
+        actionLink = resMagic.data.properties.action_link;
+      } else {
+        genError = resMagic.error || resSignup.error;
+      }
+    }
+
+    if (actionLink) {
       try {
-        await sendVerificationEmail(emailValidation.cleanEmail, linkData.properties.action_link);
+        await sendVerificationEmail(emailValidation.cleanEmail, actionLink);
       } catch (emailErr) {
         logSecurityEvent({
           eventType: 'SYSTEM_ERROR',
@@ -71,7 +91,7 @@ export async function POST(req: Request) {
       severity: 'INFO',
       ip,
       userIdentifier: emailValidation.cleanEmail,
-      details: { action: 'resend_confirmation', reason: error?.message },
+      details: { action: 'resend_confirmation', reason: genError?.message },
     });
 
     return genericResponse;
