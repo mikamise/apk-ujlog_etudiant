@@ -1,0 +1,6 @@
+{
+  "name": "UJLOG Étudiant",
+  "description": "Plateforme universitaire de l'Université Jean Lorougnon Guédé, Département de Géographie.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
