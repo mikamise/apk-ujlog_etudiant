@@ -3,7 +3,8 @@ import { enforcePayloadSize, enforceRateLimit, getClientIp } from '@/lib/rate-li
 import { validateEmail, validatePassword } from '@/lib/security-validator';
 import { loginSchema, safeParseAuthBody } from '@/lib/auth-schemas';
 import { logSecurityEvent } from '@/lib/security-logger';
-import { createClient } from '@/lib/supabase/server';
+import { createClient, createAdminClient } from '@/lib/supabase/server';
+import { ensureUserProfile } from '@/lib/server-session';
 
 export async function POST(req: Request) {
   const ip = getClientIp(req);
@@ -90,21 +91,13 @@ export async function POST(req: Request) {
       );
     }
 
-    // Récupère le profil applicatif (rôle, statut, infos étudiant/délégué)
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select(
-        `id, email, first_name, last_name, role, status,
-         student_profiles ( student_id, civility, level_code, field_code, academic_year_id, avatar_url ),
-         delegate_profiles ( level_code, field_code, academic_year_id, status )`
-      )
-      .eq('id', data.user.id)
-      .single();
+    // Récupère ou auto-provisionne le profil applicatif de façon garantie (contourne RLS)
+    const profile = await ensureUserProfile(data.user);
 
     if (!profile) {
       return NextResponse.json(
-        { success: false, error: 'Profil introuvable. Contactez un administrateur.' },
-        { status: 404 }
+        { success: false, error: 'Impossible de charger ou initialiser votre profil. Contactez le support.' },
+        { status: 500 }
       );
     }
 
@@ -116,7 +109,8 @@ export async function POST(req: Request) {
       );
     }
 
-    await supabase.from('profiles').update({ last_login_at: new Date().toISOString() }).eq('id', data.user.id);
+    const admin = createAdminClient();
+    await admin.from('profiles').update({ last_login_at: new Date().toISOString() }).eq('id', data.user.id);
 
     logSecurityEvent({
       eventType: 'AUTH_LOGIN_SUCCESS',

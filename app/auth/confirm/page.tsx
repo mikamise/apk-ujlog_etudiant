@@ -5,8 +5,9 @@ import { useEffect, useState, Suspense } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { ArrowLeft, CheckCircle, AlertTriangle, Loader2, Mail, Send, LogIn } from 'lucide-react';
+import { ArrowLeft, ArrowRight, CheckCircle, AlertTriangle, Loader2, Mail, Send, LogIn } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
+import { ClientAuthService } from '@/lib/client-auth-service';
 
 type ConfirmState = 'checking' | 'success' | 'invalid';
 
@@ -65,6 +66,30 @@ function ConfirmAccountContent() {
         hashRefreshToken = hash.get('refresh_token');
       }
 
+      const onVerificationSuccess = (user: any) => {
+        if (user) {
+          const meta = user.user_metadata || {};
+          ClientAuthService.setCachedProfile({
+            id: user.id,
+            email: user.email || '',
+            firstName: meta.first_name || '',
+            lastName: meta.last_name || '',
+            civility: meta.civility,
+            level: meta.level_code || 'l1',
+            field: meta.field_code || 'INFO',
+            role: meta.role || 'student',
+            studentId: meta.student_id,
+            academicYear: '2026-2027',
+          });
+        }
+        setState('success');
+        setTimeout(() => {
+          if (!cancelled) {
+            window.location.href = '/dashboard';
+          }
+        }, 1200);
+      };
+
       // Si Supabase a renvoyé un token_hash (flux PKCE direct)
       if (token_hash) {
         try {
@@ -73,10 +98,7 @@ function ConfirmAccountContent() {
             type: (type as any) || 'signup',
           });
           if (!cancelled && !error && data.user) {
-            setState('success');
-            setTimeout(() => {
-              if (!cancelled) router.push('/dashboard');
-            }, 1500);
+            onVerificationSuccess(data.user);
             return;
           }
         } catch {
@@ -89,10 +111,7 @@ function ConfirmAccountContent() {
         try {
           const { data, error } = await supabase.auth.exchangeCodeForSession(code);
           if (!cancelled && !error && data.user) {
-            setState('success');
-            setTimeout(() => {
-              if (!cancelled) router.push('/dashboard');
-            }, 1500);
+            onVerificationSuccess(data.user);
             return;
           }
         } catch {
@@ -108,10 +127,7 @@ function ConfirmAccountContent() {
             refresh_token: hashRefreshToken,
           });
           if (!cancelled && !error && data.user) {
-            setState('success');
-            setTimeout(() => {
-              if (!cancelled) router.push('/dashboard');
-            }, 1500);
+            onVerificationSuccess(data.user);
             return;
           }
         } catch {
@@ -123,10 +139,7 @@ function ConfirmAccountContent() {
       try {
         const { data, error } = await supabase.auth.getUser();
         if (!cancelled && !error && data.user) {
-          setState('success');
-          setTimeout(() => {
-            if (!cancelled) router.push('/dashboard');
-          }, 1500);
+          onVerificationSuccess(data.user);
           return;
         }
       } catch {
@@ -249,11 +262,29 @@ function ConfirmAccountContent() {
         <div className="w-14 h-14 bg-ujlog-secondary-50 text-ujlog-secondary rounded-2xl flex items-center justify-center mb-4 border border-ujlog-secondary-100">
           <CheckCircle className="w-7 h-7" />
         </div>
-        <h1 className="font-display text-lg font-bold text-ujlog-ink mb-1.5">Compte confirmé !</h1>
-        <p className="text-xs text-ujlog-ink-soft leading-relaxed mb-4">
-          Votre adresse e-mail a été vérifiée avec succès. Redirection vers votre tableau de bord...
+        <h1 className="font-display text-lg font-bold text-ujlog-ink mb-1.5">Compte confirmé avec succès !</h1>
+        <p className="text-xs text-ujlog-ink-soft leading-relaxed mb-5 max-w-xs">
+          Votre adresse e-mail a été vérifiée. Votre session sécurisée est active.
         </p>
-        <Loader2 className="w-5 h-5 text-ujlog-primary animate-spin" />
+
+        <div className="w-full space-y-3">
+          <a
+            href="/dashboard"
+            onClick={(e) => {
+              e.preventDefault();
+              window.location.href = '/dashboard';
+            }}
+            className="w-full bg-terracotta-gradient text-white py-3.5 rounded-2xl font-bold text-sm hover:brightness-105 transition-all text-center flex items-center justify-center gap-2 shadow-glow-orange cursor-pointer"
+          >
+            <span>Accéder au tableau de bord</span>
+            <ArrowRight className="w-4 h-4" />
+          </a>
+
+          <div className="flex items-center justify-center gap-2 text-xs text-ujlog-ink-soft pt-1">
+            <Loader2 className="w-3.5 h-3.5 text-ujlog-primary animate-spin" />
+            <span>Redirection automatique en cours...</span>
+          </div>
+        </div>
       </div>
     </Shell>
   );

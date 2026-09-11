@@ -49,15 +49,15 @@ function LoginFormContent() {
 
       const role = result.user?.role;
       const targetParam = searchParams?.get('redirectTo');
+      let destination = '/dashboard';
       if (targetParam && targetParam.startsWith('/') && !targetParam.startsWith('//')) {
-        router.push(targetParam);
+        destination = targetParam;
       } else if (role === 'admin' || role === 'super_admin') {
-        router.push('/super-admin');
+        destination = '/super-admin';
       } else if (role === 'delegate' || result.user?.isDelegate) {
-        router.push('/dashboard/delegue');
-      } else {
-        router.push('/dashboard');
+        destination = '/dashboard/delegue';
       }
+      window.location.href = destination;
     } catch {
       setError('Une erreur technique est survenue. Veuillez vérifier votre connexion.');
       setIsLoading(false);

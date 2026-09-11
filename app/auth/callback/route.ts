@@ -1,9 +1,10 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { ensureUserProfile } from '@/lib/server-session';
 
 /**
  * Route de callback PKCE Supabase SSR.
- * Échange le code d'autorisation contre une session utilisateur réelle et
+ * Échange le code d'autorisation ou le token_hash contre une session utilisateur réelle et
  * positionne les cookies HttpOnly de manière sécurisée côté serveur.
  */
 export async function GET(request: Request) {
@@ -18,26 +19,26 @@ export async function GET(request: Request) {
   if (code) {
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (!error) {
-      if (next) {
-        return NextResponse.redirect(new URL(next, requestUrl.origin));
-      }
-
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('role')
-          .eq('id', user.id)
-          .single();
+        const profile = await ensureUserProfile(user);
+
+        if (next) {
+          return NextResponse.redirect(new URL(next, requestUrl.origin), 303);
+        }
 
         if (profile?.role === 'admin' || profile?.role === 'super_admin') {
-          return NextResponse.redirect(new URL('/super-admin', requestUrl.origin));
+          return NextResponse.redirect(new URL('/super-admin', requestUrl.origin), 303);
         }
         if (profile?.role === 'delegate') {
-          return NextResponse.redirect(new URL('/dashboard/delegue', requestUrl.origin));
+          return NextResponse.redirect(new URL('/dashboard/delegue', requestUrl.origin), 303);
         }
       }
-      return NextResponse.redirect(new URL('/dashboard', requestUrl.origin));
+
+      if (next) {
+        return NextResponse.redirect(new URL(next, requestUrl.origin), 303);
+      }
+      return NextResponse.redirect(new URL('/dashboard', requestUrl.origin), 303);
     }
   }
 
@@ -56,16 +57,33 @@ export async function GET(request: Request) {
         const retryRecovery = await supabase.auth.verifyOtp({ type: 'recovery' as any, token_hash });
         if (!retryRecovery.error) {
           error = null;
-          return NextResponse.redirect(new URL('/reset-password', requestUrl.origin));
+          return NextResponse.redirect(new URL('/reset-password', requestUrl.origin), 303);
         }
       }
     }
 
     if (!error) {
       if (effectiveType === 'recovery') {
-        return NextResponse.redirect(new URL('/reset-password', requestUrl.origin));
+        return NextResponse.redirect(new URL('/reset-password', requestUrl.origin), 303);
       }
-      return NextResponse.redirect(new URL(next || '/dashboard', requestUrl.origin));
+
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const profile = await ensureUserProfile(user);
+
+        if (next) {
+          return NextResponse.redirect(new URL(next, requestUrl.origin), 303);
+        }
+
+        if (profile?.role === 'admin' || profile?.role === 'super_admin') {
+          return NextResponse.redirect(new URL('/super-admin', requestUrl.origin), 303);
+        }
+        if (profile?.role === 'delegate') {
+          return NextResponse.redirect(new URL('/dashboard/delegue', requestUrl.origin), 303);
+        }
+      }
+
+      return NextResponse.redirect(new URL(next || '/dashboard', requestUrl.origin), 303);
     }
   }
 
