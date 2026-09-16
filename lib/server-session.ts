@@ -36,7 +36,7 @@ export async function ensureUserProfile(user: {
   const admin = createAdminClient();
 
   // 1. Recherche du profil avec le client admin (contourne RLS)
-  const { data: profile } = await admin
+  const { data: profile, error: selectError } = await admin
     .from('profiles')
     .select(
       `id, email, first_name, last_name, role, status,
@@ -45,6 +45,10 @@ export async function ensureUserProfile(user: {
     )
     .eq('id', user.id)
     .maybeSingle();
+
+  if (selectError) {
+    console.error('[ensureUserProfile] initial profile fetch error:', selectError.message);
+  }
 
   if (profile) {
     return profile as unknown as SessionProfile;
@@ -58,8 +62,15 @@ export async function ensureUserProfile(user: {
   const role: SessionProfile['role'] = meta.role || 'student';
   const academicYearId = meta.academic_year_id || '2026-2027';
 
-  // S'assurer de la présence de l'année académique active
-  await admin.from('academic_years').upsert(
+  // Normalise la civilite pour correspondre a l'enum PostgreSQL ('m' | 'mme' | 'mlle')
+  // IMPORTANT: l'enum n'accepte PAS 'M.' avec majuscule ou point
+  const rawCivility = (meta.civility || 'm').toLowerCase().replace(/\./g, '').trim();
+  const civility: 'm' | 'mme' | 'mlle' = (['m', 'mme', 'mlle'] as const).includes(rawCivility as any)
+    ? (rawCivility as 'm' | 'mme' | 'mlle')
+    : 'm';
+
+  // S'assurer de la presence de l'annee academique active
+  const { error: yearError } = await admin.from('academic_years').upsert(
     {
       id: academicYearId,
       name: `Année Universitaire ${academicYearId}`,
@@ -69,9 +80,10 @@ export async function ensureUserProfile(user: {
     },
     { onConflict: 'id', ignoreDuplicates: true }
   );
+  if (yearError) console.error('[ensureUserProfile] academic_years upsert failed:', yearError.message);
 
-  // Insérer le profil applicatif principal
-  await admin.from('profiles').upsert(
+  // Inserer le profil applicatif principal
+  const { error: profileError } = await admin.from('profiles').upsert(
     {
       id: user.id,
       email,
@@ -82,25 +94,33 @@ export async function ensureUserProfile(user: {
     },
     { onConflict: 'id' }
   );
+  if (profileError) {
+    console.error('[ensureUserProfile] profiles upsert failed:', profileError.message);
+    return null;
+  }
 
   // Si c'est un étudiant ou un délégué, créer le profil étudiant
   if (role === 'student' || role === 'delegate') {
     const studentId = meta.student_id || `ETU-${user.id.slice(0, 8).toUpperCase()}`;
-    await admin.from('student_profiles').upsert(
+    const { error: studentError } = await admin.from('student_profiles').upsert(
       {
         user_id: user.id,
         student_id: studentId,
-        civility: meta.civility || 'M.',
+        civility,
         level_code: (meta.level_code || 'l1').toLowerCase(),
         field_code: meta.field_code || 'tronc_commun',
         academic_year_id: academicYearId,
       },
       { onConflict: 'user_id' }
     );
+    if (studentError) {
+      // Non-bloquant : le profil principal existe, on continue
+      console.error('[ensureUserProfile] student_profiles upsert failed:', studentError.message);
+    }
   }
 
-  // Re-sélectionner le profil complet fraîchement créé
-  const { data: createdProfile } = await admin
+  // Re-selectionner le profil complet fraichement cree
+  const { data: createdProfile, error: fetchError } = await admin
     .from('profiles')
     .select(
       `id, email, first_name, last_name, role, status,
@@ -109,6 +129,10 @@ export async function ensureUserProfile(user: {
     )
     .eq('id', user.id)
     .maybeSingle();
+
+  if (fetchError) {
+    console.error('[ensureUserProfile] final profile fetch failed:', fetchError.message);
+  }
 
   return (createdProfile as unknown as SessionProfile) || null;
 }
