@@ -91,8 +91,8 @@ export async function ensureUserProfile(user: {
         user_id: user.id,
         student_id: studentId,
         civility: meta.civility || 'M.',
-        level_code: meta.level_code || 'L1',
-        field_code: meta.field_code || 'INFO',
+        level_code: (meta.level_code || 'l1').toLowerCase(),
+        field_code: meta.field_code || 'tronc_commun',
         academic_year_id: academicYearId,
       },
       { onConflict: 'user_id' }

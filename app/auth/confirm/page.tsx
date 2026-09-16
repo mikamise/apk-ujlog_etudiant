@@ -76,7 +76,7 @@ function ConfirmAccountContent() {
             lastName: meta.last_name || '',
             civility: meta.civility,
             level: meta.level_code || 'l1',
-            field: meta.field_code || 'INFO',
+            field: meta.field_code || 'tronc_commun',
             role: meta.role || 'student',
             studentId: meta.student_id,
             academicYear: '2026-2027',
@@ -85,7 +85,14 @@ function ConfirmAccountContent() {
         setState('success');
         setTimeout(() => {
           if (!cancelled) {
-            window.location.href = '/dashboard';
+            const role = user?.user_metadata?.role || 'student';
+            const destination =
+              role === 'admin' || role === 'super_admin'
+                ? '/super-admin'
+                : role === 'delegate'
+                ? '/dashboard/delegue'
+                : '/dashboard';
+            window.location.href = destination;
           }
         }, 1200);
       };
