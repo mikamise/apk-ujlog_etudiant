@@ -135,9 +135,25 @@ export async function verifyUploadedResource(
     { headers: { Authorization: `Basic ${auth}` } }
   );
 
-  if (!res.ok) return { bytes: 0, format: '', exists: false };
-  const data = await res.json();
-  return { bytes: data.bytes ?? 0, format: data.format ?? '', exists: true };
+  if (res.ok) {
+    const data = await res.json();
+    return { bytes: data.bytes ?? 0, format: data.format ?? '', exists: true };
+  }
+
+  // Clé API sans permission "read" sur l'API Admin (401/403) : on vérifie
+  // alors via la livraison signée (HEAD), qui ne demande pas cette permission.
+  if (res.status === 401 || res.status === 403) {
+    const head = await fetch(
+      buildSignedDeliveryUrl(publicId, resourceType, { deliveryType, attachment: false }),
+      { method: 'HEAD' }
+    );
+    if (!head.ok) return { bytes: 0, format: '', exists: false };
+    const contentType = head.headers.get('content-type')?.split(';')[0].trim() ?? '';
+    const format = Object.keys(ALLOWED_COURSE_FILE_TYPES).find((ext) => ALLOWED_COURSE_FILE_TYPES[ext] === contentType) ?? '';
+    return { bytes: Number(head.headers.get('content-length') ?? 0), format, exists: true };
+  }
+
+  return { bytes: 0, format: '', exists: false };
 }
 
 /**
