@@ -110,16 +110,16 @@ export async function sendRoleInvitationEmail(
 
 /**
  * Emails "académiques" (cours publié, annonce ciblée) — envoyés via la
- * file d'attente (voir lib/notification-dispatch.ts), jamais en boucle
- * synchrone. Chaque email individuel reste ciblé à un seul destinataire ;
- * c'est la file d'attente qui garantit qu'on n'envoie jamais à toute la
- * base d'un coup.
+ * file d'attente `email_queue` (voir lib/email-queue.ts), par lots, jamais
+ * en boucle synchrone. Chaque email reste adressé à un seul destinataire.
  */
-export async function sendCoursePublishedEmail(
+export type RenderedEmail = { to: string; subject: string; html: string };
+
+export function renderCoursePublishedEmail(
   to: string,
   data: { courseTitle: string; subjectName: string; levelLabel: string; courseUrl: string }
-) {
-  return send({
+): RenderedEmail {
+  return {
     to,
     subject: `Nouveau cours publié — ${String(data.subjectName ?? '').slice(0, 120)}`,
     html: wrapper(
@@ -130,13 +130,34 @@ export async function sendCoursePublishedEmail(
       'Consulter le cours',
       data.courseUrl
     ),
-  });
+  };
 }
 
-export async function sendAnnouncementEmail(to: string, data: { title: string; message: string }) {
-  return send({
+export function renderAnnouncementEmail(to: string, data: { title: string; message: string }): RenderedEmail {
+  return {
     to,
     subject: String(data.title ?? '').slice(0, 150),
     html: wrapper('Nouvelle annonce', `<p>${esc(data.message)}</p>`),
-  });
+  };
+}
+
+/** Taille maximale d'un envoi groupé Resend. */
+export const RESEND_BATCH_MAX = 100;
+
+/**
+ * Envoi groupé (API batch Resend) : jusqu'à 100 e-mails en UNE requête.
+ * Le plan gratuit Resend limite l'API à 2 requêtes/seconde : envoyer les
+ * e-mails un par un en parallèle en faisait rejeter la majorité.
+ * Lève une erreur si Resend refuse le lot.
+ */
+export async function sendEmailBatch(emails: RenderedEmail[]): Promise<void> {
+  if (emails.length === 0) return;
+  if (emails.length > RESEND_BATCH_MAX) {
+    throw new Error(`Lot trop grand (${emails.length} > ${RESEND_BATCH_MAX}).`);
+  }
+  const resend = getResendClient();
+  const { error } = await resend.batch.send(emails.map((e) => ({ from: FROM, ...e })));
+  if (error) {
+    throw new Error(`Resend: ${error.message || JSON.stringify(error)}`);
+  }
 }

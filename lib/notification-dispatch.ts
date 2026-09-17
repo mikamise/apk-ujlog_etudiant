@@ -1,4 +1,6 @@
+import { after } from 'next/server';
 import type { SupabaseClient } from '@supabase/supabase-js';
+import { processEmailQueue } from '@/lib/email-queue';
 
 /**
  * Point d'entrée UNIQUE pour notifier un groupe d'étudiants — utilisé par
@@ -10,9 +12,10 @@ import type { SupabaseClient } from '@supabase/supabase-js';
  *   field_code déjà vérifiés par l'appelant AVANT d'appeler cette fonction.
  * - Un seul INSERT groupé pour les notifications internes (pas de boucle).
  * - Les emails ne sont jamais envoyés en boucle synchrone : ils sont
- *   déposés dans `email_queue` (traitée ensuite par lots, voir
- *   /api/cron/dispatch-emails), et uniquement pour les étudiants qui ont
- *   activé les emails dans leurs préférences.
+ *   déposés dans `email_queue`, puis envoyés par lots JUSTE APRÈS la
+ *   réponse HTTP (after() de Next.js, exécuté par Vercel en arrière-plan),
+ *   uniquement pour les étudiants qui ont activé les emails. Les échecs
+ *   sont repris par /api/cron/dispatch-emails (cron vercel.json).
  *
  * `scope: 'all'` diffuse à TOUS les étudiants — c'est un choix explicite
  * de l'appelant (jamais un défaut implicite quand levelCode/fieldCode
@@ -90,7 +93,17 @@ export async function notifyStudentsInScope(
       });
 
     if (emailRows.length > 0) {
-      await admin.from('email_queue').insert(emailRows);
+      const { error: queueError } = await admin.from('email_queue').insert(emailRows);
+      if (!queueError) {
+        // Le délégué/l'admin reçoit sa réponse immédiatement ; l'envoi se fait ensuite.
+        after(async () => {
+          try {
+            await processEmailQueue(admin as never);
+          } catch (err) {
+            console.error('[notification-dispatch] envoi des e-mails différé en échec :', err);
+          }
+        });
+      }
     }
     return { notifiedCount: rows.length, emailQueuedCount: emailRows.length };
   }
