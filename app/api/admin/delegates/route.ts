@@ -22,7 +22,7 @@ export async function GET(req: NextRequest) {
   const admin = createAdminClient();
   const { data, error } = await admin
     .from('delegate_profiles')
-    .select('id, user_id, level_code, field_code, academic_year_id, status, assigned_at, revoked_at, profiles(email, first_name, last_name)')
+    .select('id, user_id, level_code, field_code, academic_year_id, status, assigned_at, revoked_at, profiles!user_id(email, first_name, last_name)')
     .order('assigned_at', { ascending: false });
 
   if (error) return jsonError('Impossible de récupérer les délégués.', 500, undefined, req);

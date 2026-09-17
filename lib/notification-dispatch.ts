@@ -41,23 +41,39 @@ export async function notifyStudentsInScope(
     throw new Error('levelCode et fieldCode sont requis sauf en scope "all".');
   }
 
+  // BUG CORRIGÉ : `notification_preferences` était embarqué depuis
+  // student_profiles, alors que les deux tables ne sont reliées qu'à travers
+  // `profiles`. PostgREST renvoyait une erreur, ignorée : aucune notification
+  // ni aucun e-mail n'était jamais créé. Les préférences sont lues à part.
   let query = admin
     .from('student_profiles')
-    .select('user_id, profiles!inner(email), notification_preferences(email_enabled, course_alerts, system_alerts)');
+    .select('user_id, profiles!inner(email, status)')
+    .eq('profiles.status', 'active');
 
   if (!isGeneral) {
     query = query.eq('level_code', params.levelCode!).eq('field_code', params.fieldCode!);
   }
 
-  const { data: students } = await query;
+  const { data: students, error: studentsError } = await query;
+  if (studentsError) {
+    throw new Error(`Lecture des destinataires impossible : ${studentsError.message}`);
+  }
 
-  const rows = (students ?? []) as unknown as {
-    user_id: string;
-    profiles: { email: string };
-    notification_preferences: { email_enabled: boolean; course_alerts: boolean; system_alerts: boolean } | null;
-  }[];
+  const studentRows = (students ?? []) as unknown as { user_id: string; profiles: { email: string } }[];
+  if (studentRows.length === 0) return { notifiedCount: 0, emailQueuedCount: 0 };
 
-  if (rows.length === 0) return { notifiedCount: 0, emailQueuedCount: 0 };
+  type Prefs = { email_enabled: boolean; course_alerts: boolean; system_alerts: boolean };
+  const prefsByUser = new Map<string, Prefs>();
+  const userIds = studentRows.map((r) => r.user_id);
+  for (let i = 0; i < userIds.length; i += 500) {
+    const { data: prefs } = await admin
+      .from('notification_preferences')
+      .select('user_id, email_enabled, course_alerts, system_alerts')
+      .in('user_id', userIds.slice(i, i + 500));
+    for (const p of (prefs ?? []) as (Prefs & { user_id: string })[]) prefsByUser.set(p.user_id, p);
+  }
+
+  const rows = studentRows.map((r) => ({ ...r, notification_preferences: prefsByUser.get(r.user_id) ?? null }));
 
   // 1. Notifications internes — un seul insert groupé.
   const notifications = rows.map((r) => ({

@@ -92,7 +92,7 @@ export async function ensureUserProfile(user: {
     .select(
       `id, email, first_name, last_name, role, status,
        student_profiles ( student_id, civility, level_code, field_code, academic_year_id, avatar_url ),
-       delegate_profiles ( level_code, field_code, academic_year_id, status )`
+       delegate_profiles!user_id ( level_code, field_code, academic_year_id, status )`
     )
     .eq('id', user.id)
     .maybeSingle();
@@ -161,7 +161,7 @@ export async function ensureUserProfile(user: {
     .select(
       `id, email, first_name, last_name, role, status,
        student_profiles ( student_id, civility, level_code, field_code, academic_year_id, avatar_url ),
-       delegate_profiles ( level_code, field_code, academic_year_id, status )`
+       delegate_profiles!user_id ( level_code, field_code, academic_year_id, status )`
     )
     .eq('id', user.id)
     .maybeSingle();
