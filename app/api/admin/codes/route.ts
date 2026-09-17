@@ -1,26 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
-import crypto from 'crypto';
 import { enforcePayloadSize, enforceRateLimit, getClientIp } from '@/lib/rate-limiter';
 import { sanitizeString } from '@/lib/security-validator';
 import { logSecurityEvent } from '@/lib/security-logger';
-import { getSessionUser, roleAtLeast } from '@/lib/server-session';
+import { CURRENT_ACADEMIC_YEAR_ID, getSessionUser, roleAtLeast } from '@/lib/server-session';
+import { LEVEL_CODE_TO_LABEL, FIELD_CODE_TO_LABEL } from '@/lib/academic-reference';
 import { createAdminClient } from '@/lib/supabase/server';
+import { codeHint, generateReadableCode, hashActivationCode } from '@/lib/activation-codes';
 
-function hashToken(val: string): string {
-  return crypto.createHash('sha256').update(val).digest('hex');
-}
-
-function generateReadableCode(levelCode: string): string {
-  const prefix = `DEL-${(levelCode || 'L1').toUpperCase()}`;
-  const randomChars = crypto.randomBytes(4).toString('hex').toUpperCase();
-  return `${prefix}-${randomChars}`;
-}
 
 /**
  * GET /api/admin/codes — Liste tous les codes d'activation générés.
  */
 export async function GET(req: NextRequest) {
-  const rateLimit = enforceRateLimit(req, 'ADMIN');
+  const rateLimit = await enforceRateLimit(req, 'ADMIN');
   if (rateLimit) return rateLimit;
 
   const session = await getSessionUser();
@@ -32,7 +24,7 @@ export async function GET(req: NextRequest) {
   const { data, error } = await admin
     .from('activation_codes')
     .select(
-      `id, code, role, level_code, field_code, academic_year_id, status, expires_at, used_at, created_at,
+      `id, code_hint, role, level_code, field_code, academic_year_id, status, expires_at, used_at, created_at,
        creator:profiles!created_by(email, first_name, last_name),
        consumer:profiles!used_by(email, first_name, last_name)`
     )
@@ -64,7 +56,7 @@ export async function POST(req: NextRequest) {
   const payloadCheck = enforcePayloadSize(req, 'AUTH');
   if (payloadCheck) return payloadCheck;
 
-  const rateLimit = enforceRateLimit(req, 'ADMIN', {
+  const rateLimit = await enforceRateLimit(req, 'ADMIN', {
     discriminator: 'create_activation_code',
   });
   if (rateLimit) return rateLimit;
@@ -78,25 +70,26 @@ export async function POST(req: NextRequest) {
     const body = await req.json().catch(() => ({}));
     const levelCode = sanitizeString(body.levelCode, 20).toLowerCase();
     const fieldCode = sanitizeString(body.fieldCode, 50).toLowerCase();
-    const academicYearId = sanitizeString(body.academicYearId || '2026-2027', 20);
+    const academicYearId = sanitizeString(body.academicYearId || CURRENT_ACADEMIC_YEAR_ID, 20);
     const expiryHours = Math.max(1, Math.min(168, Number(body.expiryHours) || 72));
 
-    if (!levelCode || !fieldCode) {
+    if (!LEVEL_CODE_TO_LABEL[levelCode] || !FIELD_CODE_TO_LABEL[fieldCode]) {
       return NextResponse.json(
-        { success: false, error: 'Le niveau et la filière sont obligatoires pour générer un code.' },
+        { success: false, error: 'Niveau ou filière invalide pour générer un code.' },
         { status: 400 }
       );
     }
 
     const code = generateReadableCode(levelCode);
-    const codeHash = hashToken(code);
+    const codeHash = hashActivationCode(code);
     const expiresAt = new Date(Date.now() + expiryHours * 60 * 60 * 1000).toISOString();
 
     const admin = createAdminClient();
     const { data, error } = await admin
       .from('activation_codes')
       .insert({
-        code,
+        code: null,
+        code_hint: codeHint(code),
         code_hash: codeHash,
         role: 'delegate',
         level_code: levelCode,
@@ -106,12 +99,12 @@ export async function POST(req: NextRequest) {
         expires_at: expiresAt,
         created_by: session.userId,
       })
-      .select()
+      .select('id, code_hint, role, level_code, field_code, academic_year_id, status, expires_at, created_at')
       .single();
 
     if (error || !data) {
       return NextResponse.json(
-        { success: false, error: error?.message || 'Erreur lors de la création du code.' },
+        { success: false, error: 'Erreur lors de la création du code.' },
         { status: 500 }
       );
     }
@@ -123,9 +116,9 @@ export async function POST(req: NextRequest) {
       action: 'ACTIVATION_CODE_CREATED',
       entity_type: 'activation_codes',
       entity_id: data.id,
-      target_summary: `Code ${code} (${levelCode} / ${fieldCode})`,
+      target_summary: `Code ${codeHint(code)} (${levelCode} / ${fieldCode})`,
       result: 'success',
-      metadata: { code, level_code: levelCode, field_code: fieldCode, expires_at: expiresAt },
+      metadata: { level_code: levelCode, field_code: fieldCode, expires_at: expiresAt },
     });
 
     logSecurityEvent({
@@ -133,12 +126,12 @@ export async function POST(req: NextRequest) {
       severity: 'INFO',
       ip,
       userIdentifier: session.profile.email,
-      details: { code, levelCode, fieldCode },
+      details: { codeHint: codeHint(code), levelCode, fieldCode },
     });
 
     return NextResponse.json({
       success: true,
-      message: `Code d'activation généré avec succès.`,
+      message: `Code d'activation généré. Notez-le maintenant : il ne sera plus jamais affiché.`,
       code,
       data,
     });

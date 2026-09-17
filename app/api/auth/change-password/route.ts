@@ -14,7 +14,7 @@ const changePasswordSchema = z.object({
 });
 
 export async function POST(req: NextRequest) {
-  const rateLimit = enforceRateLimit(req, 'AUTH', { discriminator: 'change_password' });
+  const rateLimit = await enforceRateLimit(req, 'AUTH', { discriminator: 'change_password' });
   if (rateLimit) return rateLimit;
 
   const session = await getSessionUser();

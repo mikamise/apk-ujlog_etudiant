@@ -86,6 +86,34 @@ export function generateUploadSignature(params: Record<string, string | number>)
 }
 
 /**
+ * Type de livraison Cloudinary utilisé pour les documents de cours.
+ * 'authenticated' : le fichier n'a PAS d'URL publique res.cloudinary.com ;
+ * il n'est accessible que via une URL de livraison signée générée par le
+ * serveur après vérification de la session (voir buildSignedDeliveryUrl
+ * et /api/courses/[id]/download).
+ */
+export const COURSE_FILE_DELIVERY_TYPE = 'authenticated';
+
+export function resourceTypeForMime(mimeType: string): 'image' | 'raw' {
+  return mimeType.startsWith('image/') ? 'image' : 'raw';
+}
+
+/** Type MIME déduit de l'extension, uniquement parmi les formats autorisés. */
+export function mimeForFileName(fileName: string): string | null {
+  return ALLOWED_COURSE_FILE_TYPES[getExtension(fileName)] ?? null;
+}
+
+function cloudinaryCredentials() {
+  const cloudName = process.env.CLOUDINARY_CLOUD_NAME;
+  const apiKey = process.env.CLOUDINARY_API_KEY;
+  const apiSecret = process.env.CLOUDINARY_API_SECRET;
+  if (!cloudName || !apiKey || !apiSecret) {
+    throw new Error('Configuration Cloudinary incomplète côté serveur.');
+  }
+  return { cloudName, apiKey, apiSecret };
+}
+
+/**
  * Après l'upload direct navigateur -> Cloudinary, on ne fait JAMAIS
  * confiance aux métadonnées (taille, format) renvoyées par le client :
  * on interroge directement l'API Admin Cloudinary pour obtenir les
@@ -93,22 +121,52 @@ export function generateUploadSignature(params: Record<string, string | number>)
  */
 export async function verifyUploadedResource(
   publicId: string,
-  resourceType: 'image' | 'raw' = 'raw'
+  resourceType: 'image' | 'raw' = 'raw',
+  deliveryType: string = COURSE_FILE_DELIVERY_TYPE
 ): Promise<{ bytes: number; format: string; exists: boolean }> {
-  const cloudName = process.env.CLOUDINARY_CLOUD_NAME;
-  const apiKey = process.env.CLOUDINARY_API_KEY;
-  const apiSecret = process.env.CLOUDINARY_API_SECRET;
-  if (!cloudName || !apiKey || !apiSecret) {
-    throw new Error('Configuration Cloudinary incomplète côté serveur.');
-  }
+  const { cloudName, apiKey, apiSecret } = cloudinaryCredentials();
 
   const auth = Buffer.from(`${apiKey}:${apiSecret}`).toString('base64');
   const res = await fetch(
-    `https://api.cloudinary.com/v1_1/${cloudName}/resources/${resourceType}/upload/${encodeURIComponent(publicId)}`,
+    `https://api.cloudinary.com/v1_1/${cloudName}/resources/${resourceType}/${deliveryType}/${publicId
+      .split('/')
+      .map(encodeURIComponent)
+      .join('/')}`,
     { headers: { Authorization: `Basic ${auth}` } }
   );
 
   if (!res.ok) return { bytes: 0, format: '', exists: false };
   const data = await res.json();
   return { bytes: data.bytes ?? 0, format: data.format ?? '', exists: true };
+}
+
+/**
+ * URL de livraison SIGNÉE pour un fichier "authenticated" (équivalent de
+ * cloudinary.url(publicId, { sign_url: true, type: 'authenticated' }) du SDK).
+ *
+ * - Sans la clé secrète, impossible de construire l'URL à partir du seul
+ *   public_id : lire `course_files.storage_key` ne suffit plus pour télécharger.
+ * - L'URL n'est remise qu'à un utilisateur connecté (/api/courses/[id]/download).
+ * - Servie par res.cloudinary.com (CORS ouvert) : compatible avec le
+ *   téléchargement hors ligne (fetch + Cache Storage).
+ * Limite : le lien n'expire pas (l'expiration nécessite l'option payante
+ * "token-based authentication" de Cloudinary).
+ */
+export function buildSignedDeliveryUrl(
+  publicId: string,
+  resourceType: 'image' | 'raw',
+  options: { deliveryType?: string; attachment?: boolean } = {}
+): string {
+  const { cloudName, apiSecret } = cloudinaryCredentials();
+  const transformation = options.attachment === false ? '' : 'fl_attachment';
+  const toSign = [transformation, publicId].filter(Boolean).join('/');
+  const signature = crypto
+    .createHash('sha1')
+    .update(toSign + apiSecret, 'utf8')
+    .digest('base64')
+    .replace(/\//g, '_')
+    .replace(/\+/g, '-')
+    .substring(0, 8);
+  const deliveryType = options.deliveryType ?? COURSE_FILE_DELIVERY_TYPE;
+  return `https://res.cloudinary.com/${cloudName}/${resourceType}/${deliveryType}/s--${signature}--/${toSign}`;
 }

@@ -11,7 +11,7 @@ import { NextResponse } from 'next/server';
  * migration). Cette route ne fait que lister/gérer les délégués existants.
  */
 export async function GET(req: NextRequest) {
-  const rateLimit = enforceRateLimit(req, 'ADMIN');
+  const rateLimit = await enforceRateLimit(req, 'ADMIN');
   if (rateLimit) return rateLimit;
 
   const session = await getSessionUser();

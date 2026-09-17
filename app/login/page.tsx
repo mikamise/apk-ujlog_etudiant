@@ -4,18 +4,27 @@ import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Eye, EyeOff, ArrowLeft, LogIn, UserPlus, AlertCircle } from 'lucide-react';
+import { Eye, EyeOff, ArrowLeft, LogIn, UserPlus, AlertCircle, CheckCircle } from 'lucide-react';
 import { ClientAuthService } from '@/lib/client-auth-service';
 
 function LoginFormContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState(() => searchParams?.get('email') || '');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState(() => {
     const errorMsg = searchParams?.get('error');
     return errorMsg ? decodeURIComponent(errorMsg) : '';
+  });
+  const [notice] = useState(() => {
+    if (searchParams?.get('confirmed') === '1') {
+      return 'Votre adresse e-mail est confirmée. Connectez-vous avec votre e-mail et votre mot de passe.';
+    }
+    if (searchParams?.get('reset') === '1') {
+      return 'Votre mot de passe a été modifié. Connectez-vous avec votre nouveau mot de passe.';
+    }
+    return '';
   });
   const [isLoading, setIsLoading] = useState(false);
   const [needsConfirmation, setNeedsConfirmation] = useState(false);
@@ -28,9 +37,10 @@ function LoginFormContent() {
     setResendState('idle');
 
     const cleanEmail = email.trim().toLowerCase();
-    const cleanPassword = password.trim();
+    // Pas de trim() : un espace fait partie du mot de passe choisi.
+    const cleanPassword = password;
 
-    if (!cleanEmail || !cleanPassword) {
+    if (!cleanEmail || !cleanPassword.trim()) {
       setError('Veuillez renseigner votre adresse e-mail et votre mot de passe.');
       return;
     }
@@ -119,6 +129,13 @@ function LoginFormContent() {
               Connectez-vous à votre compte
             </p>
           </div>
+
+          {notice && !error && (
+            <div className="mb-4 p-3 bg-green-50 text-green-800 rounded-xl text-xs font-medium border border-green-200 flex items-start gap-2">
+              <CheckCircle className="w-4 h-4 shrink-0 mt-0.5" />
+              <span>{notice}</span>
+            </div>
+          )}
 
           {error && (
             <div className="mb-4 p-3 bg-ujlog-error-light text-ujlog-error rounded-xl text-xs font-medium border border-red-200/80 flex items-start gap-2">

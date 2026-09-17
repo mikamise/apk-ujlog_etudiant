@@ -1,6 +1,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { Mail, MessageCircle, MapPin, Sparkles, Phone, ShieldCheck, Landmark, BookOpen, Smartphone } from 'lucide-react';
+import { CURRENT_ACADEMIC_YEAR_ID } from '@/lib/academic-year';
 
 export function Footer() {
   return (
@@ -181,7 +182,7 @@ export function Footer() {
             © 2026 Département de Géographie. Tous droits réservés.
           </p>
           <div className="flex items-center gap-4 text-[11px]">
-            <span className="text-orange-400 font-bold">Session 2026-2027</span>
+            <span className="text-orange-400 font-bold">Session {CURRENT_ACADEMIC_YEAR_ID}</span>
             <span className="text-ujlog-ink-soft">•</span>
             <span className="text-ujlog-ink-soft/60">Daloa, Côte d&apos;Ivoire</span>
           </div>

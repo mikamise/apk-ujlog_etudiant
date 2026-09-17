@@ -4,6 +4,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { motion } from 'motion/react';
 import { ArrowRight, BookOpen, ShieldCheck, Sparkles, Smartphone, CheckCircle2, Award, Landmark, MapPin } from 'lucide-react';
+import { CURRENT_ACADEMIC_YEAR_ID } from '@/lib/academic-year';
 
 export function Hero() {
   const container = {
@@ -137,7 +138,7 @@ export function Hero() {
             </div>
             <div className="flex items-center gap-2 bg-white/10 backdrop-blur-md p-2 rounded-xl border border-white/20 col-span-2 sm:col-span-1">
               <Sparkles className="w-4 h-4 text-green-200 shrink-0" />
-              <span className="font-bold text-orange-50">Session 2026-2027</span>
+              <span className="font-bold text-orange-50">Session {CURRENT_ACADEMIC_YEAR_ID}</span>
             </div>
           </motion.div>
         </motion.div>
@@ -262,7 +263,7 @@ export function Hero() {
                   </div>
                   <div>
                     <p className="text-[11px] font-black text-white tracking-tight">
-                      Session Académique 2026-2027
+                      Session Académique {CURRENT_ACADEMIC_YEAR_ID}
                     </p>
                     <p className="text-[10px] text-ujlog-ink-soft/60">
                       Ressources synchronisées en continu

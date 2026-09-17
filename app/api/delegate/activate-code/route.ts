@@ -4,6 +4,7 @@ import { sanitizeString } from '@/lib/security-validator';
 import { logSecurityEvent } from '@/lib/security-logger';
 import { getSessionUser } from '@/lib/server-session';
 import { createAdminClient } from '@/lib/supabase/server';
+import { hashActivationCode } from '@/lib/activation-codes';
 
 /**
  * POST /api/delegate/activate-code — Activation d'un code délégué par un utilisateur connecté.
@@ -16,7 +17,7 @@ export async function POST(req: NextRequest) {
   if (payloadCheck) return payloadCheck;
 
   // Limitation stricte des tentatives d'activation pour empêcher les attaques par dictionnaire/bruteforce
-  const rateLimit = enforceRateLimit(req, 'AUTH', {
+  const rateLimit = await enforceRateLimit(req, 'AUTH', {
     discriminator: 'activate_code',
     customMessage: 'Trop de tentatives d’activation. Veuillez patienter avant de réessayer.',
   });
@@ -41,6 +42,14 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    if (session.profile.role === 'admin' || session.profile.role === 'super_admin') {
+      return NextResponse.json(
+        { success: false, error: 'Un compte administrateur ne peut pas activer un code délégué.' },
+        { status: 403 }
+      );
+    }
+
+    const codeHash = hashActivationCode(rawCode);
     const admin = createAdminClient();
 
     // 1. Tenter l'activation via la procédure stockée RPC si disponible
@@ -56,7 +65,7 @@ export async function POST(req: NextRequest) {
           severity: 'WARN',
           ip,
           userIdentifier: session.profile.email,
-          details: { code: rawCode, reason: rpcResult.error },
+          details: { reason: rpcResult.error },
         });
         return NextResponse.json({ success: false, error: rpcResult.error }, { status: 400 });
       }
@@ -66,7 +75,7 @@ export async function POST(req: NextRequest) {
         severity: 'INFO',
         ip,
         userIdentifier: session.profile.email,
-        details: { code: rawCode, role: rpcResult.role },
+        details: { role: rpcResult.role },
       });
 
       return NextResponse.json({
@@ -90,7 +99,7 @@ export async function POST(req: NextRequest) {
         used_by: session.userId,
         used_at: nowIso,
       })
-      .eq('code', rawCode)
+      .eq('code_hash', codeHash)
       .eq('status', 'pending')
       .gt('expires_at', nowIso)
       .select('*');
@@ -100,7 +109,7 @@ export async function POST(req: NextRequest) {
       const { data: checkCode } = await admin
         .from('activation_codes')
         .select('status, expires_at')
-        .eq('code', rawCode)
+        .eq('code_hash', codeHash)
         .maybeSingle();
 
       let reason = 'Code d’activation invalide ou inexistant.';
@@ -119,7 +128,7 @@ export async function POST(req: NextRequest) {
         severity: 'WARN',
         ip,
         userIdentifier: session.profile.email,
-        details: { code: rawCode, reason },
+        details: { reason },
       });
 
       return NextResponse.json({ success: false, error: reason }, { status: 400 });
@@ -158,9 +167,9 @@ export async function POST(req: NextRequest) {
       action: 'ACTIVATION_CODE_REDEEMED',
       entity_type: 'activation_codes',
       entity_id: activeCode.id,
-      target_summary: `Activation code ${activeCode.code} -> ${activeCode.role} (${activeCode.level_code})`,
+      target_summary: `Activation code ${activeCode.code_hint ?? '••••'} -> ${activeCode.role} (${activeCode.level_code})`,
       result: 'success',
-      metadata: { code: activeCode.code, role: activeCode.role },
+      metadata: { role: activeCode.role },
     });
 
     logSecurityEvent({
@@ -168,7 +177,7 @@ export async function POST(req: NextRequest) {
       severity: 'INFO',
       ip,
       userIdentifier: session.profile.email,
-      details: { code: activeCode.code, role: activeCode.role },
+      details: { role: activeCode.role },
     });
 
     return NextResponse.json({

@@ -11,7 +11,7 @@ import { notifyStudentsInScope } from '@/lib/notification-dispatch';
  * implicite : le périmètre (niveau/filière) doit être fourni explicitement.
  */
 export async function POST(req: NextRequest) {
-  const rateLimit = enforceRateLimit(req, 'ADMIN');
+  const rateLimit = await enforceRateLimit(req, 'ADMIN');
   if (rateLimit) return rateLimit;
 
   const session = await getSessionUser();

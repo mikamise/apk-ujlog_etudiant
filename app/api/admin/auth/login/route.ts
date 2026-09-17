@@ -17,7 +17,7 @@ export async function POST(req: Request) {
   const payloadCheck = enforcePayloadSize(req, 'AUTH');
   if (payloadCheck) return payloadCheck;
 
-  const rateLimit = enforceRateLimit(req, 'AUTH', {
+  const rateLimit = await enforceRateLimit(req, 'AUTH', {
     discriminator: 'admin_login',
     customMessage: 'Trop de tentatives de connexion administrateur. Veuillez patienter avant de réessayer.',
   });

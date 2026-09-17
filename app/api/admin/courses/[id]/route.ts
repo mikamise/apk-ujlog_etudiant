@@ -3,10 +3,12 @@ import { jsonSuccess, jsonError } from '@/lib/api-response';
 import { getSessionUser, roleAtLeast } from '@/lib/server-session';
 import { enforceRateLimit } from '@/lib/rate-limiter';
 import { createAdminClient } from '@/lib/supabase/server';
+import { countCourseFiles, notifyCoursePublished } from '@/lib/course-publication';
+import { getAppUrl } from '@/lib/auth-links';
 
 /** Modération admin : changer le statut et/ou les métadonnées d'un cours. */
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const rateLimit = enforceRateLimit(req, 'ADMIN');
+  const rateLimit = await enforceRateLimit(req, 'ADMIN');
   if (rateLimit) return rateLimit;
 
   const { id } = await params;
@@ -34,8 +36,20 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   }
 
   const admin = createAdminClient();
+  const { data: before } = await admin.from('courses').select('status').eq('id', id).maybeSingle();
+  if (!before) return jsonError('Cours introuvable.', 404, undefined, req);
+
+  const isPublishing = update.status === 'published' && before.status !== 'published';
+  if (isPublishing && (await countCourseFiles(admin, id)) === 0) {
+    return jsonError('Ajoutez au moins un fichier avant de publier ce cours.', 400, undefined, req);
+  }
+
   const { data, error } = await admin.from('courses').update(update).eq('id', id).select().single();
   if (error || !data) return jsonError('Cours introuvable.', 404, undefined, req);
+
+  if (isPublishing) {
+    await notifyCoursePublished(admin, data, getAppUrl(req));
+  }
 
   await admin.from('audit_logs').insert({
     user_id: session.userId,

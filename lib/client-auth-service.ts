@@ -1,5 +1,7 @@
 'use client';
 
+import { CURRENT_ACADEMIC_YEAR_ID } from '@/lib/academic-year';
+
 /**
  * ClientAuthService - UJLOG Étudiants
  * Multi-platform Authentication & Session Manager
@@ -63,10 +65,34 @@ export function sanitizeProfileForCache(raw: any): ClientUserProfile | null {
     field: raw.field || raw.studentProfile?.fieldCode || raw.delegateProfile?.fieldCode || undefined,
     studentId: raw.studentId || raw.studentProfile?.studentId || undefined,
     avatarUrl: raw.avatarUrl || undefined,
-    academicYear: raw.academicYear || raw.studentProfile?.academicYearId || '2026-2027',
+    academicYear: raw.academicYear || raw.studentProfile?.academicYearId || CURRENT_ACADEMIC_YEAR_ID,
     role: (raw.role?.toLowerCase() as any) || (raw.isDelegate ? 'delegate' : 'student'),
     isDelegate: Boolean(raw.isDelegate || raw.role === 'DELEGATE' || raw.role === 'delegate' || raw.delegateProfile),
     delegateScope: raw.delegateScope || raw.delegateProfile || undefined,
+  };
+}
+
+/** Convertit l'utilisateur renvoyé par /api/auth/login ou /api/auth/me (voir serializeSessionUser côté serveur). */
+function profileFromServerUser(serverUser: any, cached?: ClientUserProfile | null): ClientUserProfile {
+  const sp = serverUser.studentProfile || null;
+  const dp = serverUser.delegateProfile || null;
+  const role = (String(serverUser.role || 'student').toLowerCase() as ClientUserProfile['role']) || 'student';
+  return {
+    id: serverUser.id,
+    email: serverUser.email,
+    firstName: serverUser.firstName || '',
+    lastName: serverUser.lastName || '',
+    civility: sp?.civility || cached?.civility,
+    level: sp?.levelCode || dp?.levelCode || cached?.level,
+    field: sp?.fieldCode || dp?.fieldCode || cached?.field,
+    studentId: sp?.studentId || cached?.studentId,
+    avatarUrl: sp?.avatarUrl || cached?.avatarUrl,
+    academicYear: sp?.academicYearId || dp?.academicYearId || cached?.academicYear,
+    role,
+    isDelegate: role === 'delegate' && Boolean(dp),
+    delegateScope: dp
+      ? { levelCode: dp.levelCode, fieldCode: dp.fieldCode, academicYearId: dp.academicYearId }
+      : undefined,
   };
 }
 
@@ -154,22 +180,7 @@ export class ClientAuthService {
       if (res.ok) {
         const payload = await res.json();
         if (payload.success && payload.user) {
-          const serverUser = payload.user;
-          const mergedProfile: ClientUserProfile = {
-            id: serverUser.id,
-            email: serverUser.email,
-            firstName: serverUser.firstName,
-            lastName: serverUser.lastName,
-            civility: cachedProfile?.civility,
-            level: serverUser.studentProfile?.levelCode || serverUser.delegateProfile?.levelCode || cachedProfile?.level,
-            field: serverUser.studentProfile?.fieldCode || serverUser.delegateProfile?.fieldCode || cachedProfile?.field,
-            studentId: serverUser.studentProfile?.studentId || cachedProfile?.studentId,
-            avatarUrl: cachedProfile?.avatarUrl,
-            academicYear: serverUser.studentProfile?.academicYearId || cachedProfile?.academicYear || '2026-2027',
-            role: (serverUser.role?.toLowerCase() as any) || 'student',
-            isDelegate: Boolean(serverUser.role === 'DELEGATE' || serverUser.delegateProfile),
-            delegateScope: serverUser.delegateProfile || undefined,
-          };
+          const mergedProfile = profileFromServerUser(payload.user, cachedProfile);
 
           this.setCachedProfile(mergedProfile);
           return { authenticated: true, user: mergedProfile, isOffline: false };
@@ -222,20 +233,7 @@ export class ClientAuthService {
         };
       }
 
-      const serverUser = payload.user;
-      const clientProfile: ClientUserProfile = {
-        id: serverUser.id,
-        email: serverUser.email,
-        firstName: serverUser.firstName,
-        lastName: serverUser.lastName,
-        level: serverUser.studentProfile?.levelCode || serverUser.delegateProfile?.levelCode || 'l2',
-        field: serverUser.studentProfile?.fieldCode || serverUser.delegateProfile?.fieldCode || 'tronc_commun',
-        studentId: serverUser.studentProfile?.studentId || `ETU-${serverUser.id.slice(0, 6)}`,
-        academicYear: serverUser.studentProfile?.academicYearId || '2026-2027',
-        role: (serverUser.role?.toLowerCase() as any) || 'student',
-        isDelegate: Boolean(serverUser.role === 'DELEGATE' || serverUser.delegateProfile),
-        delegateScope: serverUser.delegateProfile || undefined,
-      };
+      const clientProfile = profileFromServerUser(payload.user);
 
       this.setCachedProfile(clientProfile);
       return { success: true, user: clientProfile };

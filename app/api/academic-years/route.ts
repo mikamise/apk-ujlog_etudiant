@@ -6,7 +6,7 @@ import { createClient, createAdminClient } from '@/lib/supabase/server';
 
 /** Liste réelle des années universitaires (jamais de semestre 3, contrainte imposée en base). */
 export async function GET(req: NextRequest) {
-  const rateLimit = enforceRateLimit(req, 'READ');
+  const rateLimit = await enforceRateLimit(req, 'READ');
   if (rateLimit) return rateLimit;
 
   const session = await getSessionUser();
@@ -24,7 +24,7 @@ export async function GET(req: NextRequest) {
 
 /** Création d'une nouvelle année universitaire (2 semestres créés automatiquement) — Admin uniquement. */
 export async function POST(req: NextRequest) {
-  const rateLimit = enforceRateLimit(req, 'ADMIN');
+  const rateLimit = await enforceRateLimit(req, 'ADMIN');
   if (rateLimit) return rateLimit;
 
   const session = await getSessionUser();

@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -8,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import { Eye, EyeOff, ArrowLeft, CheckCircle, AlertTriangle, Loader2 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { PasswordStrengthMeter, evaluatePassword } from '@/components/auth/password-strength-meter';
+import { ClientAuthService } from '@/lib/client-auth-service';
 
 type LinkState = 'checking' | 'valid' | 'invalid';
 
@@ -53,54 +53,30 @@ export default function ResetPasswordPage() {
 
   const passwordEvaluation = evaluatePassword(password);
 
-  // Le lien de réinitialisation reçu par e-mail peut transmettre un token_hash,
-  // un code PKCE ou des jetons dans le fragment hash (#access_token=...).
-  // On échange activement ces jetons pour valider la session recovery.
+  const [tokenHash, setTokenHash] = useState<string | null>(null);
+
+  // Lien actuel : /reset-password?token_hash=...&type=recovery -> le jeton est
+  // simplement conservé ; il n'est vérifié (et consommé) par le serveur qu'au
+  // moment de valider le nouveau mot de passe.
+  // Anciens liens : jetons dans le fragment (#access_token=...) ou session
+  // "recovery" déjà posée par /auth/callback.
   useEffect(() => {
-    const supabase = createClient();
     let cancelled = false;
 
     const initRecovery = async () => {
-      // 1. Lire paramètres URL
       const searchParams = new URLSearchParams(window.location.search);
-      const code = searchParams.get('code');
-      const token_hash = searchParams.get('token_hash');
+      const hashParam = searchParams.get('token_hash');
 
-      // 2. Hash fragment (#access_token=...&type=recovery)
-      let hashAccessToken: string | null = null;
-      let hashRefreshToken: string | null = null;
-      if (window.location.hash) {
-        const hash = new URLSearchParams(window.location.hash.substring(1));
-        hashAccessToken = hash.get('access_token');
-        hashRefreshToken = hash.get('refresh_token');
+      if (hashParam) {
+        setTokenHash(hashParam);
+        setLinkState('valid');
+        return;
       }
 
-      if (token_hash) {
-        try {
-          const { data, error } = await supabase.auth.verifyOtp({
-            token_hash,
-            type: 'recovery',
-          });
-          if (!cancelled && !error && data.user) {
-            setLinkState('valid');
-            return;
-          }
-        } catch {
-          // continue fallback
-        }
-      }
-
-      if (code) {
-        try {
-          const { data, error } = await supabase.auth.exchangeCodeForSession(code);
-          if (!cancelled && !error && data.user) {
-            setLinkState('valid');
-            return;
-          }
-        } catch {
-          // continue fallback
-        }
-      }
+      const supabase = createClient();
+      const hash = window.location.hash ? new URLSearchParams(window.location.hash.substring(1)) : null;
+      const hashAccessToken = hash?.get('access_token');
+      const hashRefreshToken = hash?.get('refresh_token');
 
       if (hashAccessToken && hashRefreshToken) {
         try {
@@ -109,6 +85,7 @@ export default function ResetPasswordPage() {
             refresh_token: hashRefreshToken,
           });
           if (!cancelled && !error && data.user) {
+            window.history.replaceState(null, '', window.location.pathname);
             setLinkState('valid');
             return;
           }
@@ -117,7 +94,6 @@ export default function ResetPasswordPage() {
         }
       }
 
-      // Vérifier si la session recovery existe déjà (ex. posée par /auth/callback)
       try {
         const { data, error } = await supabase.auth.getUser();
         if (!cancelled && !error && data.user) {
@@ -145,7 +121,7 @@ export default function ResetPasswordPage() {
     setError('');
 
     if (!passwordEvaluation.isAllMandatoryMet) {
-      setError('Le mot de passe ne respecte pas les critères de sécurité obligatoires.');
+      setError('Le mot de passe doit comporter au moins 8 caractères, dont une majuscule, une minuscule et un chiffre.');
       return;
     }
 
@@ -160,21 +136,24 @@ export default function ResetPasswordPage() {
       const res = await fetch('/api/auth/reset-password', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ newPassword: password }),
+        body: JSON.stringify({ newPassword: password, ...(tokenHash ? { token_hash: tokenHash } : {}) }),
       });
       const payload = await res.json().catch(() => null);
 
-if (!res.ok || !payload?.success) {
-        if (payload?.error?.toLowerCase().includes('expiré') || payload?.error?.toLowerCase().includes('invalide')) {
+      if (!res.ok || !payload?.success) {
+        if (payload?.code === 'INVALID_LINK') {
           setLinkState('invalid');
         } else {
           setError(payload?.error || 'Une erreur est survenue. Veuillez réessayer.');
         }
-        setIsLoading(false);
         return;
       }
 
+      // Nettoie tout cache local : l'utilisateur doit se reconnecter.
+      ClientAuthService.clearLocalState();
       setSuccess(true);
+      const email = payload.email ? `&email=${encodeURIComponent(payload.email)}` : '';
+      setTimeout(() => router.replace(`/login?reset=1${email}`), 2500);
     } catch {
       setError('Une erreur technique est survenue. Vérifiez votre connexion.');
     } finally {
@@ -225,14 +204,14 @@ if (!res.ok || !payload?.success) {
           </div>
           <h1 className="font-display text-lg font-bold text-ujlog-ink mb-2">Mot de passe modifié</h1>
           <p className="text-xs text-ujlog-ink-soft leading-relaxed mb-6">
-            Votre mot de passe a été réinitialisé avec succès. Vous pouvez désormais vous connecter avec vos nouveaux identifiants.
+            Votre mot de passe a été réinitialisé. Redirection vers la page de connexion...
           </p>
           <button
             type="button"
-            onClick={() => router.push('/login')}
+            onClick={() => router.replace('/login?reset=1')}
             className="w-full bg-ujlog-primary-dark text-white py-3 rounded-2xl font-bold text-sm hover:brightness-105 transition-all cursor-pointer"
           >
-            Retour à la connexion
+            Se connecter
           </button>
         </div>
       </Shell>
@@ -261,9 +240,7 @@ if (!res.ok || !payload?.success) {
             <input
               type={showPassword ? 'text' : 'password'}
               required
-
-
-value={password}
+              value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Entrez votre mot de passe"
               className="w-full px-4 py-3 pr-11 rounded-2xl border border-ujlog-border bg-white text-sm font-medium text-ujlog-ink placeholder:text-ujlog-ink-soft/60 focus:outline-none focus:ring-2 focus:ring-ujlog-primary/20 focus:border-ujlog-primary transition-all"

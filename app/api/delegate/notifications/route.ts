@@ -17,7 +17,7 @@ import { notifyStudentsInScope } from '@/lib/notification-dispatch';
  * sien, quel que soit le payload envoyé.
  */
 export async function POST(req: NextRequest) {
-  const rateLimit = enforceRateLimit(req, 'WRITE', { discriminator: 'delegate_announcement' });
+  const rateLimit = await enforceRateLimit(req, 'WRITE', { discriminator: 'delegate_announcement' });
   if (rateLimit) return rateLimit;
 
   const session = await getSessionUser();

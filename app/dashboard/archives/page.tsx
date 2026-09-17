@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { motion } from 'motion/react';
 import { DelegateCourse } from '@/lib/delegate-types';
+import { CURRENT_ACADEMIC_YEAR_ID } from '@/lib/academic-year';
 
 interface ArchivedCourse {
   id: string;
@@ -39,7 +40,7 @@ interface ArchivedCourse {
 }
 
 export default function StudentArchivesPage() {
-  const [selectedYear, setSelectedYear] = useState<string>('2026-2027');
+  const [selectedYear, setSelectedYear] = useState<string>(CURRENT_ACADEMIC_YEAR_ID);
   const [selectedLevel, setSelectedLevel] = useState<string>('all');
   const [selectedType, setSelectedType] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -96,7 +97,7 @@ export default function StudentArchivesPage() {
   // Filter archived courses by selected year, level, type, query
   const filteredCourses = useMemo(() => {
     return allCourses.filter((course) => {
-      const courseYear = course.annee || course.academicYearId || '2026-2027';
+      const courseYear = course.annee || course.academicYearId || CURRENT_ACADEMIC_YEAR_ID;
       if (courseYear !== selectedYear) return false;
 
       if (selectedLevel !== 'all' && course.niveau !== selectedLevel && course.niveauCode !== selectedLevel && course.levelCode !== selectedLevel) return false;

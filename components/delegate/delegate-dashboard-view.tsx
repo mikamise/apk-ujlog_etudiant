@@ -34,6 +34,8 @@ import {
   RotateCcw
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { LEVEL_CODE_TO_LABEL, FIELD_CODE_TO_LABEL } from '@/lib/academic-reference';
+import { ACCEPTED_COURSE_FILE_EXTENSIONS, uploadCourseFile, validateCourseFile } from '@/lib/course-upload';
 
 interface DelegateDashboardViewProps {
   onLogoutDelegate: () => void;
@@ -51,13 +53,15 @@ export function DelegateDashboardView({ onLogoutDelegate }: DelegateDashboardVie
   const { user } = useUser();
   const [activeTab, setActiveTab] = useState<'overview' | 'publish' | 'publications' | 'drafts' | 'notifications' | 'history'>('overview');
 
-  // Delegate scope
-  const scope: DelegateScope = user.delegateScope || {
-    level: 'Licence 2',
-    section: 'Tronc commun',
-    levelCode: 'l2',
-    academicYear: '2026-2027',
-    permissions: ['publish_course', 'edit_own_course', 'delete_own_course', 'draft_course'],
+  // Périmètre réel du délégué (renvoyé par le serveur) — plus de valeur fictive par défaut.
+  const rawScope = (user.delegateScope || {}) as Partial<DelegateScope> & { fieldCode?: string; academicYearId?: string };
+  const scopeFieldCode = rawScope.fieldCode || rawScope.section || '';
+  const scope: DelegateScope = {
+    levelCode: rawScope.levelCode || '',
+    level: LEVEL_CODE_TO_LABEL[rawScope.levelCode || ''] || rawScope.level || '—',
+    section: FIELD_CODE_TO_LABEL[scopeFieldCode] || rawScope.section || '—',
+    academicYear: rawScope.academicYearId || rawScope.academicYear || '—',
+    permissions: rawScope.permissions || ['publish_course', 'edit_own_course', 'delete_own_course', 'draft_course'],
   };
 
   const isTroncCommun = scope.levelCode === 'l1' || scope.levelCode === 'l2';
@@ -80,6 +84,10 @@ export function DelegateDashboardView({ onLogoutDelegate }: DelegateDashboardVie
   const [showPreviewModal, setShowPreviewModal] = useState<boolean>(false);
   const [publishSuccess, setPublishSuccess] = useState<boolean>(false);
   const [publishError, setPublishError] = useState<string | null>(null);
+  const [lastSavedAsDraft, setLastSavedAsDraft] = useState<boolean>(false);
+  const selectedFileRef = useRef<File | null>(null);
+  const [editFile, setEditFile] = useState<File | null>(null);
+  const [editError, setEditError] = useState<string | null>(null);
 
   // Edit / Delete Modals
   const [courseToEdit, setCourseToEdit] = useState<DelegateCourse | null>(null);
@@ -128,127 +136,134 @@ export function DelegateDashboardView({ onLogoutDelegate }: DelegateDashboardVie
     return publishedCourses.reduce((acc, curr) => acc + (curr.telechargements || 0), 0);
   }, [publishedCourses]);
 
-  // Handle File Selection
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-      const sizeMb = (file.size / (1024 * 1024)).toFixed(1);
-      setSelectedFile({
-        name: file.name,
-        size: `${sizeMb} Mo`,
-        type: file.type || 'application/pdf',
-      });
-      setUploadProgress(0);
-      let p = 0;
-      const interval = setInterval(() => {
-        p += 25;
-        setUploadProgress(p);
-        if (p >= 100) clearInterval(interval);
-      }, 60);
+  // Sélection du fichier : le vrai objet File est conservé pour l'upload.
+  const selectFile = (file: File | undefined) => {
+    if (!file) return;
+    const validationError = validateCourseFile(file);
+    if (validationError) {
+      setPublishError(validationError);
+      return;
     }
+    setPublishError(null);
+    selectedFileRef.current = file;
+    setSelectedFile({
+      name: file.name,
+      size: `${(file.size / (1024 * 1024)).toFixed(1)} Mo`,
+      type: file.type,
+    });
+    setUploadProgress(0);
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    selectFile(e.target.files?.[0]);
+    e.target.value = '';
   };
 
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      const file = e.dataTransfer.files[0];
-      const sizeMb = (file.size / (1024 * 1024)).toFixed(1);
-      setSelectedFile({
-        name: file.name,
-        size: `${sizeMb} Mo`,
-        type: file.type || 'application/pdf',
-      });
-      setUploadProgress(100);
-    }
+    selectFile(e.dataTransfer.files?.[0]);
   };
 
-  // Publish / Save Draft Action
+  /**
+   * Publication réelle, en 3 temps :
+   * 1. création du cours en brouillon (périmètre imposé par le serveur) ;
+   * 2. envoi du fichier (Cloudinary, progression réelle) ;
+   * 3. passage en "publié" -> notification des étudiants du niveau/filière.
+   * Si une étape échoue après la création, le cours reste dans les brouillons.
+   */
   const handleExecutePublish = async (asDraft: boolean = false) => {
     setPublishError(null);
+    setPublishSuccess(false);
     if (!formTitre.trim()) {
       setPublishError('Veuillez saisir le titre du cours.');
+      setShowPreviewModal(false);
+      return;
+    }
+    const file = selectedFileRef.current;
+    if (!asDraft && !file) {
+      setPublishError('Ajoutez le document (PDF, Word, PowerPoint...) avant de publier.');
+      setShowPreviewModal(false);
       return;
     }
 
     setIsPublishing(true);
+    setUploadProgress(0);
+    let createdCourseId: string | null = null;
 
     try {
-      const authorName = user.firstName ? `${user.firstName} ${user.lastName}` : 'Délégué Promotion';
-      const authorEmail = user.email || 'delegue@ujlog.ci';
-
       const finalMatiere = isTroncCommun ? formMatiere : scope.section;
 
-      const payload = {
-        titre: formTitre.trim(),
-        description: formDescription.trim(),
-        matiere: finalMatiere,
-        semestre: formSemestre,
-        type: formType,
-        enseignant: formEnseignant.trim() || 'Équipe Pédagogique',
-        niveau: scope.level,
-        section: scope.section,
-        niveauCode: scope.levelCode,
-        annee: scope.academicYear,
-        fileName: selectedFile?.name || `${formTitre.replace(/\s+/g, '_')}.pdf`,
-        fileSize: selectedFile?.size || '2.4 Mo',
-        fileMimeType: selectedFile?.type || 'application/pdf',
-        authorEmail,
-        authorName,
-        status: asDraft ? 'draft' : 'published',
-      };
-
-      // 1. Call API
       const res = await fetch('/api/delegate/courses', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({
+          title: formTitre.trim(),
+          description: formDescription.trim(),
+          subjectName: finalMatiere,
+          type: formType,
+          semesterNumber: formSemestre,
+          teacherName: formEnseignant.trim(),
+        }),
       });
+      const created = await res.json().catch(() => null);
+      if (!res.ok || !created?.success) {
+        throw new Error(created?.error || 'Erreur lors de la création du cours.');
+      }
+      createdCourseId = String(created.data.id);
 
-      const data = await res.json();
-
-      if (!res.ok) {
-        setPublishError(data.error || 'Erreur lors de la publication.');
-        setIsPublishing(false);
-        return;
+      if (file) {
+        await uploadCourseFile(createdCourseId, file, setUploadProgress);
       }
 
-      // 2. Save in local DelegateStore
-      const newCourse: DelegateCourse = data.course || {
-        ...payload,
-        id: `dlg-crs-${Date.now()}`,
-        status: asDraft ? 'draft' : 'published',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        telechargements: 0,
-      };
+      if (!asDraft) {
+        const publishRes = await fetch(`/api/delegate/courses/${createdCourseId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: 'published' }),
+        });
+        const published = await publishRes.json().catch(() => null);
+        if (!publishRes.ok || !published?.success) {
+          throw new Error(published?.error || 'La publication a échoué.');
+        }
+      }
 
-      // 3. Log and Notif
       DelegateStore.addLog({
         action: asDraft ? 'course_created' : 'course_published',
         description: `${asDraft ? 'Brouillon enregistré' : 'Publication'} : « ${formTitre} » (${scope.level} • ${scope.section}).`,
       });
 
-      DelegateStore.addNotification({
-        title: asDraft ? 'Brouillon sauvegardé' : 'Nouveau document publié',
-        message: `Le document « ${formTitre} » est maintenant ${asDraft ? 'dans vos brouillons' : 'accessible aux étudiants de votre promotion'}.`,
-        type: 'publication',
-      });
-
       setShowPreviewModal(false);
-      setIsPublishing(false);
+      setLastSavedAsDraft(asDraft);
       setPublishSuccess(true);
 
-      // Reset form
       setFormTitre('');
       setFormDescription('');
       setFormEnseignant('');
       setSelectedFile(null);
+      selectedFileRef.current = null;
       setUploadProgress(0);
       loadData();
-    } catch {
-      setPublishError('Erreur de communication avec le serveur.');
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Erreur de communication avec le serveur.';
+      setPublishError(createdCourseId ? `${message} Le cours a été conservé dans vos brouillons.` : message);
+      setShowPreviewModal(false);
+      if (createdCourseId) loadData();
+    } finally {
       setIsPublishing(false);
     }
+  };
+
+  const publishDraft = async (course: DelegateCourse) => {
+    const res = await fetch(`/api/delegate/courses/${course.id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: 'published' }),
+    }).catch(() => null);
+    const payload = res ? await res.json().catch(() => null) : null;
+    if (!res?.ok || !payload?.success) {
+      window.alert(payload?.error || 'La publication a échoué. Vérifiez votre connexion.');
+    }
+    loadData();
   };
 
   // Delete course action
@@ -256,7 +271,12 @@ export function DelegateDashboardView({ onLogoutDelegate }: DelegateDashboardVie
     if (!courseToDelete || isDeletingCourse) return;
     setIsDeletingCourse(true);
     try {
-      await fetch(`/api/delegate/courses/${courseToDelete.id}`, { method: 'DELETE' });
+      const res = await fetch(`/api/delegate/courses/${courseToDelete.id}`, { method: 'DELETE' });
+      if (!res.ok) {
+        const payload = await res.json().catch(() => null);
+        window.alert(payload?.error || 'Suppression impossible.');
+        return;
+      }
       DelegateStore.addLog({
         action: 'course_deleted',
         description: `Suppression du document « ${courseToDelete.titre} ».`,
@@ -282,13 +302,28 @@ export function DelegateDashboardView({ onLogoutDelegate }: DelegateDashboardVie
     e.preventDefault();
     if (!courseToEdit || isSavingEdit) return;
     setIsSavingEdit(true);
+    setEditError(null);
 
     try {
-      await fetch(`/api/delegate/courses/${courseToEdit.id}`, {
-        method: 'PUT',
+      if (editFile) {
+        await uploadCourseFile(courseToEdit.id, editFile);
+      }
+
+      const res = await fetch(`/api/delegate/courses/${courseToEdit.id}`, {
+        method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(courseToEdit),
+        body: JSON.stringify({
+          title: courseToEdit.titre,
+          description: courseToEdit.description,
+          subjectName: courseToEdit.matiere,
+          type: courseToEdit.type,
+          status: courseToEdit.status === 'published' ? 'published' : 'draft',
+        }),
       });
+      const payload = await res.json().catch(() => null);
+      if (!res.ok || !payload?.success) {
+        throw new Error(payload?.error || 'Enregistrement impossible.');
+      }
 
       DelegateStore.addLog({
         action: 'course_updated',
@@ -296,9 +331,11 @@ export function DelegateDashboardView({ onLogoutDelegate }: DelegateDashboardVie
       });
 
       setCourseToEdit(null);
+      setEditFile(null);
       loadData();
-    } catch {
-      console.error('Error editing course');
+    } catch (err) {
+      setEditError(err instanceof Error ? err.message : 'Enregistrement impossible.');
+      loadData();
     } finally {
       setIsSavingEdit(false);
     }
@@ -541,8 +578,12 @@ export function DelegateDashboardView({ onLogoutDelegate }: DelegateDashboardVie
               <div className="flex items-center gap-2.5">
                 <CheckCircle2 className="w-5 h-5 text-orange-700 shrink-0" />
                 <div>
-                  <span className="font-bold block">Document publié avec succès !</span>
-                  <span className="text-[11px] text-orange-700">Il est maintenant immédiatement disponible pour les étudiants de {scope.level}.</span>
+                  <span className="font-bold block">{lastSavedAsDraft ? 'Brouillon enregistré !' : 'Document publié avec succès !'}</span>
+                  <span className="text-[11px] text-orange-700">
+                    {lastSavedAsDraft
+                      ? 'Retrouvez-le dans l’onglet Brouillons pour le publier plus tard.'
+                      : `Il est maintenant disponible pour les étudiants de ${scope.level} (${scope.section}), qui ont été notifiés.`}
+                  </span>
                 </div>
               </div>
               <button
@@ -686,7 +727,7 @@ export function DelegateDashboardView({ onLogoutDelegate }: DelegateDashboardVie
                   <input
                     ref={fileInputRef}
                     type="file"
-                    accept=".pdf,.doc,.docx,.ppt,.pptx"
+                    accept={ACCEPTED_COURSE_FILE_EXTENSIONS}
                     onChange={handleFileChange}
                     className="hidden"
                   />
@@ -700,7 +741,7 @@ export function DelegateDashboardView({ onLogoutDelegate }: DelegateDashboardVie
                         <span className="font-bold text-ujlog-ink text-xs block">{selectedFile.name}</span>
                         <span className="text-[10px] text-ujlog-ink-soft/60">{selectedFile.size}</span>
                       </div>
-                      {uploadProgress < 100 && (
+                      {isPublishing && uploadProgress > 0 && uploadProgress < 100 && (
                         <div className="w-48 mx-auto bg-ujlog-border rounded-full h-1.5 overflow-hidden">
                           <div className="bg-orange-700 h-full transition-all duration-150" style={{ width: `${uploadProgress}%` }} />
                         </div>
@@ -712,7 +753,7 @@ export function DelegateDashboardView({ onLogoutDelegate }: DelegateDashboardVie
                       <p className="text-xs font-semibold text-ujlog-ink-soft">
                         Glissez-déposez le fichier ici ou <span className="text-ujlog-primary-dark underline">parcourez</span>
                       </p>
-                      <p className="text-[10px] text-ujlog-ink-soft/60">PDF, DOCX, PPTX jusqu’à 50 Mo</p>
+                      <p className="text-[10px] text-ujlog-ink-soft/60">PDF, Word, PowerPoint, Excel, JPG, PNG — jusqu’à 50 Mo</p>
                     </div>
                   )}
                 </div>
@@ -893,14 +934,7 @@ export function DelegateDashboardView({ onLogoutDelegate }: DelegateDashboardVie
                     <p className="text-[10px] text-ujlog-ink-soft/60">{course.matiere} • Semestre {course.semestre}</p>
                   </div>
                   <button
-                    onClick={async () => {
-                      await fetch(`/api/delegate/courses/${course.id}`, {
-                        method: 'PATCH',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ status: 'published' }),
-                      }).catch(() => {});
-                      loadData();
-                    }}
+                    onClick={() => publishDraft(course)}
                     className="px-3 py-1.5 bg-orange-800 text-white text-xs font-bold rounded-xl cursor-pointer hover:bg-orange-900"
                   >
                     Publier maintenant
@@ -1183,11 +1217,38 @@ export function DelegateDashboardView({ onLogoutDelegate }: DelegateDashboardVie
                   </div>
                 </div>
 
+                <div className="space-y-1">
+                  <label className="block text-xs font-bold text-ujlog-ink-soft">
+                    Ajouter un fichier {courseToEdit.fileName ? `(actuel : ${courseToEdit.fileName})` : '(aucun fichier pour le moment)'}
+                  </label>
+                  <input
+                    type="file"
+                    accept={ACCEPTED_COURSE_FILE_EXTENSIONS}
+                    onChange={(e) => {
+                      const file = e.target.files?.[0] ?? null;
+                      const validationError = file ? validateCourseFile(file) : null;
+                      setEditError(validationError);
+                      setEditFile(validationError ? null : file);
+                    }}
+                    className="w-full text-xs"
+                  />
+                </div>
+
+                {editError && (
+                  <div className="p-2.5 bg-red-50 border border-red-200 rounded-xl text-red-700 text-xs font-bold">
+                    {editError}
+                  </div>
+                )}
+
                 <div className="flex justify-end gap-2 pt-3">
                   <button
                     type="button"
                     disabled={isSavingEdit}
-                    onClick={() => setCourseToEdit(null)}
+                    onClick={() => {
+                      setCourseToEdit(null);
+                      setEditFile(null);
+                      setEditError(null);
+                    }}
                     className="px-3.5 py-2 bg-ujlog-cream disabled:opacity-50 text-ujlog-ink-soft text-xs font-bold rounded-xl cursor-pointer"
                   >
                     Annuler

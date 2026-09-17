@@ -5,7 +5,7 @@ import { getSessionUser } from '@/lib/server-session';
 import { createClient } from '@/lib/supabase/server';
 
 export async function POST(req: NextRequest) {
-  const rateLimit = enforceRateLimit(req, 'WRITE');
+  const rateLimit = await enforceRateLimit(req, 'WRITE');
   if (rateLimit) return rateLimit;
 
   const session = await getSessionUser();

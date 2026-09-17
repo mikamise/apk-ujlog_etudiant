@@ -21,6 +21,7 @@ import {
   ChevronDown,
   Archive
 } from 'lucide-react';
+import { CURRENT_ACADEMIC_YEAR_ID } from '@/lib/academic-year';
 
 export function DashboardNavigation() {
   const pathname = usePathname();
@@ -213,7 +214,7 @@ export function DashboardNavigation() {
               <span>Année Universitaire</span>
             </p>
             <p className="text-[11px] font-bold text-ujlog-ink mt-0.5">
-              {user.academicYear || '2026-2027'}
+              {user.academicYear || CURRENT_ACADEMIC_YEAR_ID}
             </p>
           </div>
 

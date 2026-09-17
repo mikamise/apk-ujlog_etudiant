@@ -5,7 +5,7 @@ import { getSessionUser, roleAtLeast } from '@/lib/server-session';
 import { createClient, createAdminClient } from '@/lib/supabase/server';
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const rateLimit = enforceRateLimit(req, 'READ');
+  const rateLimit = await enforceRateLimit(req, 'READ');
   if (rateLimit) return rateLimit;
 
   const { id } = await params;
@@ -28,7 +28,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
 }
 
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const rateLimit = enforceRateLimit(req, 'WRITE');
+  const rateLimit = await enforceRateLimit(req, 'WRITE');
   if (rateLimit) return rateLimit;
 
   const { id } = await params;

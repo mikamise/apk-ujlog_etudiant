@@ -27,7 +27,7 @@ import {
  * même la règle métier avant d'écrire quoi que ce soit.
  */
 export async function POST(req: NextRequest) {
-  const rateLimit = enforceRateLimit(req, 'WRITE', { discriminator: 'advance_level' });
+  const rateLimit = await enforceRateLimit(req, 'WRITE', { discriminator: 'advance_level' });
   if (rateLimit) return rateLimit;
 
   const session = await getSessionUser();

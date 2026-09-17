@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import crypto from 'crypto';
 import { enforcePayloadSize, enforceRateLimit, getClientIp } from '@/lib/rate-limiter';
 import {
   validateEmail,
@@ -11,8 +12,8 @@ import { registerSchema, safeParseAuthBody } from '@/lib/auth-schemas';
 import { logSecurityEvent } from '@/lib/security-logger';
 import { createAdminClient } from '@/lib/supabase/server';
 import { sendVerificationEmail } from '@/lib/email';
-
-const CURRENT_ACADEMIC_YEAR = '2026-2027';
+import { CURRENT_ACADEMIC_YEAR_ID, ensureAcademicYear, normalizeCivility } from '@/lib/server-session';
+import { buildConfirmEmailUrl, getAppUrl, type EmailLinkType } from '@/lib/auth-links';
 
 export async function POST(req: Request) {
   const ip = getClientIp(req);
@@ -20,7 +21,7 @@ export async function POST(req: Request) {
   const payloadCheck = enforcePayloadSize(req, 'AUTH');
   if (payloadCheck) return payloadCheck;
 
-  const rateLimit = enforceRateLimit(req, 'AUTH', {
+  const rateLimit = await enforceRateLimit(req, 'AUTH', {
     discriminator: 'register',
     customMessage: 'Trop de tentatives d’inscription. Veuillez patienter un instant avant de réessayer.',
   });
@@ -35,7 +36,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: false, error: zodCheck.error }, { status: 400 });
     }
 
-    // Couche 2 — validation métier existante (règles fines, normalisation).
+    // Couche 2 — validation métier (règles fines, normalisation).
     const emailValidation = validateEmail(body.email);
     if (!emailValidation.isValid) {
       return NextResponse.json(
@@ -51,22 +52,17 @@ export async function POST(req: Request) {
           success: false,
           error:
             passwordValidation.error ||
-            'Le mot de passe doit comporter au moins 8 caractères, dont une majuscule, une minuscule, un chiffre et un caractère spécial.',
+            'Le mot de passe doit comporter au moins 8 caractères, dont une majuscule, une minuscule et un chiffre.',
         },
         { status: 400 }
       );
     }
 
-    const rawCivility = sanitizeString(body.civility, 10).toLowerCase();
-    const civility = rawCivility === 'mme' ? 'mme' : rawCivility === 'mlle' ? 'mlle' : 'm';
+    // "Monsieur"/"Madame"/"Mademoiselle" (formulaire) -> 'm'/'mme'/'mlle' (enum PostgreSQL).
+    const civility = normalizeCivility(body.civility);
     const lastName = sanitizeString(body.lastName, 60);
     const firstName = sanitizeString(body.firstName, 60);
     const rawStudentId = sanitizeString(body.studentId || body.matricule, 50);
-    // BUG CORRIGÉ : `field` était auparavant stocké tel quel (ex. "Histoire-Géographie",
-    // avec majuscule et accent) au lieu du code court ("histoire_geographie") utilisé
-    // partout ailleurs (courses.field_code, delegate_profiles.field_code...). Résultat :
-    // un étudiant inscrit avec une autre filière que la valeur par défaut ne voyait jamais
-    // ses propres cours, le filtrage par filière ne matchait jamais. Voir migration 0002.
     const field = normalizeFieldCode(body.field).fieldCode;
     const levelValidation = validateAcademicLevel(body.level || 'L1');
 
@@ -78,139 +74,166 @@ export async function POST(req: Request) {
     }
 
     const cleanEmail = emailValidation.cleanEmail;
-    const studentId = rawStudentId || `ETU-${Date.now().toString().slice(-6)}`;
     const admin = createAdminClient();
 
-    // Le matricule doit être unique : vérifié via le client admin (contourne RLS légitimement,
-    // c'est une vérification serveur de confiance, pas une donnée manipulable par le client).
-    const { data: existingStudent } = await admin
-      .from('student_profiles')
-      .select('id')
-      .eq('student_id', studentId)
-      .maybeSingle();
-
-    if (existingStudent) {
-      return NextResponse.json(
-        { success: false, error: 'Ce matricule étudiant est déjà enregistré.' },
-        { status: 409 }
-      );
+    // Matricule saisi : doit être unique. Matricule généré : aléatoire (l'ancien
+    // `ETU-` + 6 derniers chiffres de Date.now() bouclait toutes les ~16 minutes
+    // et provoquait des collisions sur la contrainte unique).
+    if (rawStudentId) {
+      const { data: existingStudent } = await admin
+        .from('student_profiles')
+        .select('user_id, profiles!inner(email)')
+        .eq('student_id', rawStudentId)
+        .maybeSingle();
+      const ownerEmail = (existingStudent as { profiles?: { email?: string } } | null)?.profiles?.email;
+      if (existingStudent && ownerEmail !== cleanEmail) {
+        return NextResponse.json(
+          { success: false, error: 'Ce matricule étudiant est déjà enregistré.' },
+          { status: 409 }
+        );
+      }
     }
+    const studentId = rawStudentId || `ETU-${crypto.randomBytes(4).toString('hex').toUpperCase()}`;
 
-    // S'assure que l'année universitaire courante existe (jamais de 3e semestre).
-    await admin.from('academic_years').upsert(
-      {
-        id: CURRENT_ACADEMIC_YEAR,
-        name: `Année Universitaire ${CURRENT_ACADEMIC_YEAR}`,
-        start_year: 2026,
-        end_year: 2027,
-        status: 'active',
-      },
-      { onConflict: 'id', ignoreDuplicates: true }
-    );
+    // L'année courante doit exister AVEC ses 2 semestres (FK de student_profiles et des cours).
+    await ensureAcademicYear(admin, CURRENT_ACADEMIC_YEAR_ID);
 
-    // 1. Création du compte réel dans Supabase Auth. On utilise generateLink
-    // (plutôt que signUp classique) pour récupérer le lien de confirmation
-    // nous-mêmes et l'envoyer via Resend : le mailer intégré de Supabase
-    // (gratuit) est très limité en volume et peu fiable pour un vrai usage.
-    const origin = req.headers.get('origin') || (req.headers.get('referer') ? new URL(req.headers.get('referer')!).origin : '');
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || origin || 'http://localhost:3000';
+    // 1. Création du compte Supabase Auth. generateLink n'envoie AUCUN e-mail :
+    //    on récupère le token haché et on envoie nous-mêmes le lien via Resend.
+    let userId: string;
+    let hashedToken: string | undefined;
+    let linkType: EmailLinkType = 'signup';
+    let createdNewAuthUser = false;
+
     const { data: signUpData, error: signUpError } = await admin.auth.admin.generateLink({
       type: 'signup',
       email: cleanEmail,
       password: body.password,
-      options: {
-        data: { first_name: firstName, last_name: lastName },
-        redirectTo: `${appUrl}/auth/callback`,
+      options: { data: { first_name: firstName, last_name: lastName } },
+    });
+
+    if (!signUpError && signUpData?.user) {
+      userId = signUpData.user.id;
+      hashedToken = signUpData.properties?.hashed_token;
+      // Pour un compte existant NON confirmé, Supabase ne renvoie pas d'erreur
+      // mais ne met PAS à jour le mot de passe : on distingue les deux cas.
+      createdNewAuthUser = Date.now() - new Date(signUpData.user.created_at).getTime() < 2 * 60 * 1000;
+      if (!createdNewAuthUser) {
+        const { error: updateError } = await admin.auth.admin.updateUserById(userId, {
+          password: body.password,
+          user_metadata: { first_name: firstName, last_name: lastName },
+        });
+        if (updateError) {
+          return NextResponse.json(
+            { success: false, error: 'Impossible de reprendre cette inscription. Réessayez plus tard.' },
+            { status: 500 }
+          );
+        }
+      }
+    } else {
+      // Le compte Auth existe peut-être déjà (inscription précédente jamais
+      // confirmée, ou profil jamais finalisé à cause d'une ancienne erreur).
+      // generateLink('magiclink') ne crée rien et n'envoie rien : il sert ici
+      // à retrouver l'utilisateur existant.
+      const { data: probe } = await admin.auth.admin.generateLink({ type: 'magiclink', email: cleanEmail });
+      const existingUser = probe?.user;
+
+      if (!existingUser) {
+        logSecurityEvent({
+          eventType: 'AUTH_REGISTER_FAILURE',
+          severity: 'WARN',
+          ip,
+          userIdentifier: cleanEmail,
+          details: { reason: signUpError?.message },
+        });
+        return NextResponse.json(
+          { success: false, error: 'Impossible de créer le compte pour le moment. Réessayez dans quelques instants.' },
+          { status: 500 }
+        );
+      }
+
+      if (existingUser.email_confirmed_at) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: 'Un compte confirmé existe déjà avec cette adresse e-mail. Connectez-vous, ou utilisez « Mot de passe oublié ».',
+            code: 'EMAIL_ALREADY_REGISTERED',
+          },
+          { status: 409 }
+        );
+      }
+
+      // Compte jamais confirmé : on reprend l'inscription (seul le propriétaire
+      // réel de la boîte mail pourra la confirmer, donc aucun risque de vol).
+      userId = existingUser.id;
+      const { error: updateError } = await admin.auth.admin.updateUserById(userId, {
+        password: body.password,
+        user_metadata: { first_name: firstName, last_name: lastName },
+      });
+      if (updateError) {
+        return NextResponse.json(
+          { success: false, error: 'Impossible de reprendre cette inscription. Réessayez plus tard.' },
+          { status: 500 }
+        );
+      }
+      // Vérifier un lien magiclink confirme aussi l'adresse d'un compte non confirmé.
+      hashedToken = probe?.properties?.hashed_token;
+      linkType = 'magiclink';
+    }
+
+    // 2. Profil applicatif (client admin : opération serveur de confiance).
+    //    upsert : idempotent si une tentative précédente avait déjà créé la ligne.
+    const { error: profileError } = await admin.from('profiles').upsert(
+      {
+        id: userId,
+        email: cleanEmail,
+        first_name: firstName,
+        last_name: lastName,
+        role: 'student',
+        status: 'active',
       },
-    });
+      { onConflict: 'id' }
+    );
 
-    if (signUpError || !signUpData.user) {
-      console.error('[SUPABASE SIGNUP ERROR]', {
-        message: signUpError?.message,
-        code: signUpError?.code,
-        status: signUpError?.status,
-      });
+    const { error: studentProfileError } = profileError
+      ? { error: null }
+      : await admin.from('student_profiles').upsert(
+          {
+            user_id: userId,
+            student_id: studentId,
+            civility,
+            level_code: levelValidation.levelCode,
+            field_code: field,
+            academic_year_id: CURRENT_ACADEMIC_YEAR_ID,
+          },
+          { onConflict: 'user_id' }
+        );
 
-      logSecurityEvent({
-
-        eventType: 'AUTH_REGISTER_FAILURE',
-
-        severity: 'WARN',
-
-        ip,
-
-        userIdentifier: cleanEmail,
-
-        details: { reason: signUpError?.message },
-
-      });
-
-      return NextResponse.json(
-
-        {
-          success: false,
-          error: signUpError?.message || 'Erreur inconnue',
-        },
-
-        { status: 409 }
-      );
-
-    }
-
-    const userId = signUpData.user.id;
-
-    // 2. Création du profil applicatif (opération serveur de confiance -> client admin).
-    const { error: profileError } = await admin.from('profiles').insert({
-      id: userId,
-      email: cleanEmail,
-      first_name: firstName,
-      last_name: lastName,
-      role: 'student',
-      status: 'active',
-    });
-
-    if (profileError) {
+    if (profileError || studentProfileError) {
+      const message = (profileError || studentProfileError)?.message;
       logSecurityEvent({
         eventType: 'SYSTEM_ERROR',
         severity: 'ERROR',
         ip,
         userIdentifier: cleanEmail,
-        details: { route: '/api/auth/register', step: 'profile_insert', error: profileError.message },
+        details: { route: '/api/auth/register', step: profileError ? 'profile_upsert' : 'student_profile_upsert', error: message },
       });
+      // Rollback : sans ça, le compte Auth restait orphelin et chaque nouvelle
+      // tentative répondait "email déjà utilisé".
+      if (createdNewAuthUser) {
+        await admin.auth.admin.deleteUser(userId).catch(() => undefined);
+      }
       return NextResponse.json(
-        { success: false, error: 'Le compte a été créé mais le profil n’a pas pu être finalisé. Contactez le support.' },
+        { success: false, error: 'Le compte n’a pas pu être finalisé. Veuillez réessayer.' },
         { status: 500 }
       );
     }
 
-    const { error: studentProfileError } = await admin.from('student_profiles').insert({
-      user_id: userId,
-      student_id: studentId,
-      civility,
-      level_code: levelValidation.levelCode,
-      field_code: field,
-      academic_year_id: CURRENT_ACADEMIC_YEAR,
-    });
-
-    if (studentProfileError) {
-      logSecurityEvent({
-        eventType: 'SYSTEM_ERROR',
-        severity: 'ERROR',
-        ip,
-        userIdentifier: cleanEmail,
-        details: { route: '/api/auth/register', step: 'student_profile_insert', error: studentProfileError.message },
-      });
-      return NextResponse.json(
-        { success: false, error: 'Le compte a été créé mais le profil étudiant n’a pas pu être finalisé. Contactez le support.' },
-        { status: 500 }
-      );
-    }
-
-    const actionLink = signUpData.properties?.action_link;
+    // 3. E-mail de confirmation — lien direct vers l'app (voir lib/auth-links.ts).
     let emailSent = false;
-    if (actionLink) {
+    if (hashedToken) {
       try {
-        await sendVerificationEmail(cleanEmail, actionLink);
+        await sendVerificationEmail(cleanEmail, buildConfirmEmailUrl(getAppUrl(req), hashedToken, linkType));
         emailSent = true;
       } catch (emailErr) {
         logSecurityEvent({
@@ -228,17 +251,18 @@ export async function POST(req: Request) {
       severity: 'INFO',
       ip,
       userIdentifier: cleanEmail,
-      details: { role: 'student', emailSent },
+      details: { role: 'student', emailSent, resumed: !createdNewAuthUser },
     });
 
-    // Pas de session automatique : le compte doit être confirmé par e-mail avant tout accès
-    // (voir /api/auth/login qui bloque explicitement les comptes non confirmés).
+    // Pas de session automatique : le compte doit être confirmé par e-mail,
+    // puis l'étudiant se connecte depuis /login.
     return NextResponse.json(
       {
         success: true,
+        emailSent,
         message: emailSent
-          ? 'Compte créé. Vérifiez votre boîte e-mail pour confirmer votre adresse avant de vous connecter.'
-          : 'Compte créé, mais l’e-mail de confirmation n’a pas pu être envoyé. Utilisez "Renvoyer l’e-mail de confirmation" depuis la page de connexion.',
+          ? 'Compte créé. Vérifiez votre boîte e-mail et cliquez sur le lien de confirmation, puis connectez-vous.'
+          : 'Compte créé, mais l’e-mail de confirmation n’a pas pu être envoyé. Utilisez « Renvoyer l’e-mail de confirmation » depuis la page de connexion.',
         requiresEmailConfirmation: true,
         user: {
           id: userId,
@@ -251,7 +275,7 @@ export async function POST(req: Request) {
             studentId,
             levelCode: levelValidation.levelCode,
             fieldCode: field,
-            academicYearId: CURRENT_ACADEMIC_YEAR,
+            academicYearId: CURRENT_ACADEMIC_YEAR_ID,
           },
         },
       },

@@ -8,7 +8,7 @@ import { sanitizeSearchTerm } from '@/lib/security-validator';
 
 /** Liste réelle des étudiants inscrits — aucune donnée fictive, table vide = liste vide. */
 export async function GET(req: NextRequest) {
-  const rateLimit = enforceRateLimit(req, 'ADMIN');
+  const rateLimit = await enforceRateLimit(req, 'ADMIN');
   if (rateLimit) return rateLimit;
 
   const session = await getSessionUser();
@@ -38,6 +38,6 @@ export async function GET(req: NextRequest) {
   return NextResponse.json({
     success: true,
     data: { students: data ?? [] },
-    meta: buildPaginationMeta(page, limit, count ?? 0),
+    meta: buildPaginationMeta(count ?? 0, page, limit),
   });
 }

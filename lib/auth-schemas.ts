@@ -36,6 +36,7 @@ export const forgotPasswordSchema = z.object({
 
 export const resetPasswordSchema = z.object({
   newPassword: z.string().min(8, 'Le mot de passe doit contenir au moins 8 caractères.').max(200),
+  token_hash: z.string().max(512).optional(),
 });
 
 /**

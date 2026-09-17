@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server';
 import { jsonSuccess, jsonError } from '@/lib/api-response';
 import { enforceRateLimit } from '@/lib/rate-limiter';
 import { createAdminClient } from '@/lib/supabase/server';
+import { timingSafeEqualStrings } from '@/lib/security-crypto';
 import { sendCoursePublishedEmail, sendAnnouncementEmail } from '@/lib/email';
 
 const BATCH_SIZE = 50;
@@ -23,13 +24,27 @@ interface PendingEmailRow {
  * de la base à chaque publication.
  *
  * Protégé par un secret partagé (CRON_SECRET) — jamais exposé publiquement.
+ * Planification fournie : netlify/functions/dispatch-emails.mjs (toutes les
+ * 5 minutes). Sur Vercel, un cron appelle GET avec "Authorization: Bearer <CRON_SECRET>".
  */
+function isAuthorizedCron(req: NextRequest): boolean {
+  const expected = process.env.CRON_SECRET;
+  if (!expected) return false;
+  const headerSecret = req.headers.get('x-cron-secret');
+  const bearer = req.headers.get('authorization')?.replace(/^Bearer\s+/i, '');
+  const provided = headerSecret || bearer || '';
+  return timingSafeEqualStrings(provided, expected);
+}
+
+export async function GET(req: NextRequest) {
+  return POST(req);
+}
+
 export async function POST(req: NextRequest) {
-  const rateLimit = enforceRateLimit(req, 'ADMIN');
+  const rateLimit = await enforceRateLimit(req, 'ADMIN');
   if (rateLimit) return rateLimit;
 
-  const secret = req.headers.get('x-cron-secret');
-  if (!process.env.CRON_SECRET || secret !== process.env.CRON_SECRET) {
+  if (!isAuthorizedCron(req)) {
     return jsonError('Accès refusé.', 403, undefined, req);
   }
 

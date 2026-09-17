@@ -30,6 +30,7 @@ import {
   LEVELS_REQUIRING_OPTION,
   getNextLevel,
 } from '@/lib/academic-reference';
+import { CURRENT_ACADEMIC_YEAR_ID } from '@/lib/academic-year';
 
 export default function ProfilPage() {
   const { user, updateUser, updateAvatar } = useUser();
@@ -48,7 +49,7 @@ export default function ProfilPage() {
     email: user.email || '',
     level: currentLevelLabel,
     field: currentFieldLabel,
-    academicYear: user.academicYear || '2026-2027',
+    academicYear: user.academicYear || CURRENT_ACADEMIC_YEAR_ID,
     studentId: user.studentId || 'UJLOG-2026-0842',
   });
 

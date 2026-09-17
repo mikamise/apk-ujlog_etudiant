@@ -6,7 +6,7 @@ import { createAdminClient } from '@/lib/supabase/server';
 
 /** Vue admin de TOUS les cours (tous statuts), pas seulement les publiés. */
 export async function GET(req: NextRequest) {
-  const rateLimit = enforceRateLimit(req, 'ADMIN');
+  const rateLimit = await enforceRateLimit(req, 'ADMIN');
   if (rateLimit) return rateLimit;
 
   const session = await getSessionUser();
@@ -27,5 +27,5 @@ export async function GET(req: NextRequest) {
     .range(from, from + limit - 1);
 
   if (error) return jsonError('Impossible de récupérer les cours.', 500, undefined, req);
-  return jsonSuccess(data ?? [], buildPaginationMeta(page, limit, count ?? 0), 200, req);
+  return jsonSuccess(data ?? [], buildPaginationMeta(count ?? 0, page, limit), 200, req);
 }

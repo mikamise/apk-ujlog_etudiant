@@ -3,6 +3,7 @@ import { jsonSuccess, jsonError } from '@/lib/api-response';
 import { getSessionUser, roleAtLeast } from '@/lib/server-session';
 import { enforceRateLimit } from '@/lib/rate-limiter';
 import { createAdminClient } from '@/lib/supabase/server';
+import { LEVEL_CODE_TO_LABEL, FIELD_CODE_TO_LABEL } from '@/lib/academic-reference';
 
 const STATUS_MAP: Record<string, string> = {
   actif: 'active',
@@ -15,15 +16,12 @@ const STATUS_MAP: Record<string, string> = {
  * Suspend / réactive un compte étudiant, et/ou change son niveau/filière.
  * Ne supprime jamais le compte ni ses données.
  *
- * Changer le niveau d'un étudiant a un effet réel immédiat (voir migration
- * 0007) : il perd l'accès aux cours de son ancien niveau/filière et
- * obtient l'accès à ceux du nouveau — exactement comme s'il s'était
- * inscrit directement dans ce niveau. Les prochaines publications de
- * cours dans le nouveau niveau le notifieront désormais ; celles de
- * l'ancien niveau ne le concerneront plus.
+ * Changer le niveau d'un étudiant ne restreint pas l'accès aux cours
+ * (migration 0008) : il détermine le ciblage des notifications — les
+ * prochaines publications du nouveau niveau le notifieront.
  */
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const rateLimit = enforceRateLimit(req, 'ADMIN');
+  const rateLimit = await enforceRateLimit(req, 'ADMIN');
   if (rateLimit) return rateLimit;
 
   const { id } = await params;
@@ -50,6 +48,13 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
     if (error || !data) return jsonError('Étudiant introuvable.', 404, undefined, req);
 
+    // Suspension réelle : sans ça, la session Supabase de l'étudiant restait
+    // valide et utilisable directement contre l'API Supabase. Le bannissement
+    // empêche toute reconnexion et tout rafraîchissement de session.
+    await admin.auth.admin
+      .updateUserById(id, { ban_duration: dbStatus === 'suspended' ? '876000h' : 'none' })
+      .catch(() => undefined);
+
     await admin.from('audit_logs').insert({
       user_id: session.userId,
       user_email: session.profile.email,
@@ -70,6 +75,9 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     const update: Record<string, string> = {};
     if (body.levelCode) update.level_code = String(body.levelCode).toLowerCase();
     if (body.fieldCode) update.field_code = String(body.fieldCode).toLowerCase();
+    if ((update.level_code && !LEVEL_CODE_TO_LABEL[update.level_code]) || (update.field_code && !FIELD_CODE_TO_LABEL[update.field_code])) {
+      return jsonError('Niveau ou filière invalide.', 400, undefined, req);
+    }
 
     const { data: studentProfile, error } = await admin
       .from('student_profiles')

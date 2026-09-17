@@ -12,6 +12,7 @@ import {
 } from 'react';
 import { DelegateScope, UserRole } from '@/lib/delegate-types';
 import { ClientAuthService, sanitizeProfileForCache, PROFILE_STORAGE_KEY } from '@/lib/client-auth-service';
+import { CURRENT_ACADEMIC_YEAR_ID } from '@/lib/academic-year';
 
 export interface UserProfile {
   id?: string;
@@ -37,7 +38,7 @@ export const EMPTY_PROFILE: UserProfile = {
   level: 'l2',
   field: 'tronc_commun',
   avatarUrl: '',
-  academicYear: '2026-2027',
+  academicYear: CURRENT_ACADEMIC_YEAR_ID,
   studentId: '',
   role: 'student',
   isDelegate: false,
@@ -125,7 +126,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
             level: clean.level || 'l2',
             field: clean.field || 'tronc_commun',
             avatarUrl: clean.avatarUrl || '',
-            academicYear: clean.academicYear || '2026-2027',
+            academicYear: clean.academicYear || CURRENT_ACADEMIC_YEAR_ID,
             studentId: clean.studentId || '',
             role: clean.role || 'student',
             isDelegate: Boolean(clean.isDelegate),
@@ -223,7 +224,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
             level: current.level || 'l2',
             field: current.field || 'tronc_commun',
             avatarUrl: current.avatarUrl,
-            academicYear: current.academicYear || '2026-2027',
+            academicYear: current.academicYear || CURRENT_ACADEMIC_YEAR_ID,
             studentId: current.studentId || '',
             role: current.role as any,
             isDelegate: Boolean(current.isDelegate),

@@ -5,7 +5,7 @@ import { getSessionUser } from '@/lib/server-session';
 import { createClient } from '@/lib/supabase/server';
 
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const rateLimit = enforceRateLimit(req, 'WRITE');
+  const rateLimit = await enforceRateLimit(req, 'WRITE');
   if (rateLimit) return rateLimit;
 
   const { id } = await params;

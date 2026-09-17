@@ -1,24 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
-import crypto from 'crypto';
-import { enforcePayloadSize, enforceRateLimit, getClientIp } from '@/lib/rate-limiter';
-import { logSecurityEvent } from '@/lib/security-logger';
+import { enforceRateLimit } from '@/lib/rate-limiter';
 import { getSessionUser, roleAtLeast } from '@/lib/server-session';
 import { createAdminClient } from '@/lib/supabase/server';
+import { codeHint, generateReadableCode, hashActivationCode } from '@/lib/activation-codes';
 
-function hashToken(val: string): string {
-  return crypto.createHash('sha256').update(val).digest('hex');
-}
-
-function generateReadableCode(levelCode: string): string {
-  const prefix = `DEL-${(levelCode || 'L1').toUpperCase()}`;
-  const randomChars = crypto.randomBytes(4).toString('hex').toUpperCase();
-  return `${prefix}-${randomChars}`;
-}
 
 /**
  * PATCH /api/admin/codes/[id] — Modifier le statut d'un code (révoquer / réactiver).
  */
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const rateLimit = await enforceRateLimit(req, 'ADMIN');
+  if (rateLimit) return rateLimit;
+
   const { id } = await params;
   const session = await getSessionUser();
   if (!session || !roleAtLeast(session.profile.role, 'admin')) {
@@ -33,7 +26,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   }
 
   const admin = createAdminClient();
-  const { data: existingCode } = await admin.from('activation_codes').select('*').eq('id', id).maybeSingle();
+  const { data: existingCode } = await admin.from('activation_codes').select('id, code_hint, role, level_code, field_code, academic_year_id, status').eq('id', id).maybeSingle();
   if (!existingCode) {
     return NextResponse.json({ success: false, error: 'Code introuvable.' }, { status: 404 });
   }
@@ -49,7 +42,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     .from('activation_codes')
     .update({ status: targetStatus })
     .eq('id', id)
-    .select()
+    .select('id, code_hint, role, level_code, field_code, academic_year_id, status, expires_at, created_at')
     .single();
 
   if (error || !data) {
@@ -63,7 +56,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     action: targetStatus === 'revoked' ? 'ACTIVATION_CODE_REVOKED' : 'ACTIVATION_CODE_REACTIVATED',
     entity_type: 'activation_codes',
     entity_id: id,
-    target_summary: `Code ${existingCode.code} -> statut ${targetStatus}`,
+    target_summary: `Code ${existingCode.code_hint ?? '••••'} -> statut ${targetStatus}`,
     result: 'success',
   });
 
@@ -74,6 +67,9 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
  * DELETE /api/admin/codes/[id] — Supprimer un code non utilisé.
  */
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const rateLimit = await enforceRateLimit(req, 'ADMIN');
+  if (rateLimit) return rateLimit;
+
   const { id } = await params;
   const session = await getSessionUser();
   if (!session || !roleAtLeast(session.profile.role, 'admin')) {
@@ -81,7 +77,7 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
   }
 
   const admin = createAdminClient();
-  const { data: existingCode } = await admin.from('activation_codes').select('*').eq('id', id).maybeSingle();
+  const { data: existingCode } = await admin.from('activation_codes').select('id, code_hint, role, level_code, field_code, academic_year_id, status').eq('id', id).maybeSingle();
   if (!existingCode) {
     return NextResponse.json({ success: false, error: 'Code introuvable.' }, { status: 404 });
   }
@@ -105,7 +101,7 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
     action: 'ACTIVATION_CODE_DELETED',
     entity_type: 'activation_codes',
     entity_id: id,
-    target_summary: `Suppression code ${existingCode.code}`,
+    target_summary: `Suppression code ${existingCode.code_hint ?? '••••'}`,
     result: 'success',
   });
 
@@ -116,6 +112,9 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
  * POST /api/admin/codes/[id] — Régénérer un code (invalide l'ancien et crée un nouveau code pour le même périmètre).
  */
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const rateLimit = await enforceRateLimit(req, 'ADMIN');
+  if (rateLimit) return rateLimit;
+
   const { id } = await params;
   const session = await getSessionUser();
   if (!session || !roleAtLeast(session.profile.role, 'admin')) {
@@ -123,9 +122,12 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   }
 
   const admin = createAdminClient();
-  const { data: oldCode } = await admin.from('activation_codes').select('*').eq('id', id).maybeSingle();
+  const { data: oldCode } = await admin.from('activation_codes').select('id, code_hint, role, level_code, field_code, academic_year_id, status').eq('id', id).maybeSingle();
   if (!oldCode) {
     return NextResponse.json({ success: false, error: 'Code introuvable.' }, { status: 404 });
+  }
+  if (oldCode.status === 'active') {
+    return NextResponse.json({ success: false, error: 'Ce code a déjà été utilisé : impossible de le régénérer.' }, { status: 400 });
   }
 
   // Marquer l'ancien comme révoqué
@@ -133,13 +135,14 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
   // Créer un nouveau code pour le même périmètre
   const newCodeStr = generateReadableCode(oldCode.level_code);
-  const newHash = hashToken(newCodeStr);
+  const newHash = hashActivationCode(newCodeStr);
   const expiresAt = new Date(Date.now() + 72 * 60 * 60 * 1000).toISOString(); // 72 heures
 
   const { data: newCode, error } = await admin
     .from('activation_codes')
     .insert({
-      code: newCodeStr,
+      code: null,
+      code_hint: codeHint(newCodeStr),
       code_hash: newHash,
       role: oldCode.role,
       level_code: oldCode.level_code,
@@ -149,7 +152,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       expires_at: expiresAt,
       created_by: session.userId,
     })
-    .select()
+    .select('id, code_hint, role, level_code, field_code, academic_year_id, status, expires_at, created_at')
     .single();
 
   if (error || !newCode) {
@@ -163,7 +166,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     action: 'ACTIVATION_CODE_REGENERATED',
     entity_type: 'activation_codes',
     entity_id: newCode.id,
-    target_summary: `Ancien code ${oldCode.code} -> Nouveau code ${newCodeStr}`,
+    target_summary: `Ancien code ${oldCode.code_hint ?? '••••'} -> Nouveau code ${codeHint(newCodeStr)}`,
     result: 'success',
   });
 

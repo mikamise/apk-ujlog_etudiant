@@ -9,6 +9,7 @@ import {
 import Link from 'next/link';
 import { motion } from 'motion/react';
 import { LEVEL_CODE_TO_LABEL, FIELD_CODE_TO_LABEL } from '@/lib/academic-reference';
+import { CURRENT_ACADEMIC_YEAR_ID } from '@/lib/academic-year';
 
 const levels = [
   { 
@@ -85,7 +86,7 @@ export default function DashboardHome() {
           <div className="space-y-2 max-w-xl">
             <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-white/12 backdrop-blur-md border border-white/20 text-[10px] font-bold text-orange-50">
               <Sparkles className="w-3 h-3 text-green-200" />
-              <span>Espace Officiel • Session 2026-2027</span>
+              <span>Espace Officiel • Session {CURRENT_ACADEMIC_YEAR_ID}</span>
             </div>
             
             <h1 className="font-display text-base sm:text-lg lg:text-xl font-bold tracking-tight text-orange-50">

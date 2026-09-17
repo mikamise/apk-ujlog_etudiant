@@ -5,7 +5,7 @@ import { createAdminClient } from '@/lib/supabase/server';
 
 /** Journal d'audit réel (audit_logs) — jamais de logs inventés. */
 export async function GET(req: Request) {
-  const rateLimit = enforceRateLimit(req, 'ADMIN');
+  const rateLimit = await enforceRateLimit(req, 'ADMIN');
   if (rateLimit) return rateLimit;
 
   const session = await getSessionUser();

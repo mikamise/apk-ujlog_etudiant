@@ -74,7 +74,11 @@ self.addEventListener('fetch', (event) => {
     url.pathname.startsWith('/api/admin') ||
     url.pathname.startsWith('/api/delegate') ||
     url.pathname.startsWith('/admin') ||
-    url.pathname.startsWith('/super-admin')
+    url.pathname.startsWith('/super-admin') ||
+    // Liens e-mail contenant des jetons à usage unique : jamais mis en cache.
+    url.pathname.startsWith('/auth/') ||
+    url.pathname === '/reset-password' ||
+    url.pathname === '/invitation/accepter'
   ) {
     // Direct network pass-through for sensitive/admin routes
     return;

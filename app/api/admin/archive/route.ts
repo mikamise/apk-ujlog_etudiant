@@ -9,7 +9,7 @@ import { createAdminClient } from '@/lib/supabase/server';
  * Ne supprime AUCUNE donnée (règle absolue de conservation des historiques).
  */
 export async function POST(req: NextRequest) {
-  const rateLimit = enforceRateLimit(req, 'ADMIN');
+  const rateLimit = await enforceRateLimit(req, 'ADMIN');
   if (rateLimit) return rateLimit;
 
   const session = await getSessionUser();
@@ -49,7 +49,7 @@ export async function POST(req: NextRequest) {
  * étudiants ni ne déplace quoi que ce soit d'une autre année.
  */
 export async function PATCH(req: NextRequest) {
-  const rateLimit = enforceRateLimit(req, 'ADMIN');
+  const rateLimit = await enforceRateLimit(req, 'ADMIN');
   if (rateLimit) return rateLimit;
 
   const session = await getSessionUser();
@@ -91,7 +91,7 @@ export async function PATCH(req: NextRequest) {
  * filtres déjà présents côté interface.
  */
 export async function GET(req: NextRequest) {
-  const rateLimit = enforceRateLimit(req, 'ADMIN');
+  const rateLimit = await enforceRateLimit(req, 'ADMIN');
   if (rateLimit) return rateLimit;
 
   const session = await getSessionUser();

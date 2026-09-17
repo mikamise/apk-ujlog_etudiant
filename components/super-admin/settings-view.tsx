@@ -2,9 +2,10 @@
 
 import { useState } from 'react';
 import { Settings, ShieldCheck, Database, KeyRound, CheckCircle2 } from 'lucide-react';
+import { CURRENT_ACADEMIC_YEAR_ID } from '@/lib/academic-year';
 
 export function SettingsView() {
-  const [academicYear, setAcademicYear] = useState('2026-2027');
+  const [academicYear, setAcademicYear] = useState(CURRENT_ACADEMIC_YEAR_ID);
   const [sessionTimeout, setSessionTimeout] = useState('8');
   const [savedSuccess, setSavedSuccess] = useState(false);
 

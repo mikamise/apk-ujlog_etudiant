@@ -25,6 +25,8 @@ export default function RegisterPage() {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [emailSent, setEmailSent] = useState(true);
+  const [resendState, setResendState] = useState<'idle' | 'sending' | 'sent'>('idle');
 
   const passwordEvaluation = evaluatePassword(formData.password);
 
@@ -122,6 +124,7 @@ export default function RegisterPage() {
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
         setError(data.error || "Erreur lors de la création du compte.");
+        if (data.code === 'EMAIL_ALREADY_REGISTERED') setStep(3);
         setIsLoading(false);
         return;
       }
@@ -131,11 +134,27 @@ export default function RegisterPage() {
       // refuse toute connexion tant que email_confirmed_at est vide) : traiter
       // l'inscription comme une connexion immédiate serait exactement le
       // contournement de vérification que Phase 3 §1 interdit explicitement.
+      setEmailSent(data.emailSent !== false);
       setSuccess(true);
     } catch {
       setError("Une erreur technique est survenue. Veuillez réessayer.");
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleResend = async () => {
+    setResendState('sending');
+    try {
+      await fetch('/api/auth/resend-confirmation', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: formData.email.trim().toLowerCase() }),
+      });
+    } catch {
+      // réponse générique de toute façon
+    } finally {
+      setResendState('sent');
     }
   };
 
@@ -155,7 +174,9 @@ export default function RegisterPage() {
           <div className="space-y-1">
             <h2 className="font-display text-base font-bold text-ujlog-ink tracking-tight">Vérifiez votre boîte mail</h2>
             <p className="text-xs text-ujlog-ink-soft font-normal leading-relaxed">
-              Bienvenue, <strong className="text-ujlog-ink">{formData.civility} {formData.firstName} {formData.lastName}</strong>. Un e-mail de confirmation vient d&apos;être envoyé à votre adresse. Cliquez sur le lien qu&apos;il contient pour activer votre compte.
+              Bienvenue, <strong className="text-ujlog-ink">{formData.civility} {formData.firstName} {formData.lastName}</strong>. {emailSent
+                ? <>Un e-mail de confirmation vient d&apos;être envoyé à votre adresse. Cliquez sur le lien qu&apos;il contient, puis connectez-vous avec votre e-mail et votre mot de passe.</>
+                : <>Votre compte est créé, mais l&apos;e-mail de confirmation n&apos;a pas pu être envoyé. Utilisez le bouton ci-dessous pour le renvoyer.</>}
             </p>
           </div>
 
@@ -166,11 +187,24 @@ export default function RegisterPage() {
           </div>
 
           <p className="text-[11px] text-ujlog-ink-soft/80 leading-relaxed">
-            Vous ne recevez rien ? Vérifiez vos courriers indésirables, ou réessayez dans quelques minutes.
+            Vous ne recevez rien ? Vérifiez vos courriers indésirables, ou renvoyez l&apos;e-mail.
           </p>
 
+          <button
+            type="button"
+            onClick={handleResend}
+            disabled={resendState !== 'idle'}
+            className="w-full bg-white border border-ujlog-border text-ujlog-ink py-2.5 rounded-2xl font-bold text-xs hover:border-ujlog-primary-dark transition-colors disabled:opacity-60 cursor-pointer"
+          >
+            {resendState === 'sending'
+              ? 'Envoi en cours...'
+              : resendState === 'sent'
+              ? 'E-mail renvoyé ✓'
+              : "Renvoyer l'e-mail de confirmation"}
+          </button>
+
           <Link
-            href="/login"
+            href={`/login?email=${encodeURIComponent(formData.email.trim().toLowerCase())}`}
             className="w-full bg-ujlog-primary-dark text-white py-3 rounded-2xl font-bold text-xs hover:brightness-105 transition-all flex items-center justify-center gap-2"
           >
             <span>Aller à la page de connexion</span>

@@ -3,7 +3,8 @@ import crypto from 'crypto';
 import { enforcePayloadSize, enforceRateLimit, getClientIp } from '@/lib/rate-limiter';
 import { validatePassword, sanitizeString } from '@/lib/security-validator';
 import { logSecurityEvent } from '@/lib/security-logger';
-import { createClient, createAdminClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/server';
+import { CURRENT_ACADEMIC_YEAR_ID, ensureAcademicYear, roleAtLeast, type SessionProfile } from '@/lib/server-session';
 
 function hashToken(token: string) {
   return crypto.createHash('sha256').update(token).digest('hex');
@@ -20,7 +21,7 @@ export async function POST(req: Request) {
   const payloadCheck = enforcePayloadSize(req, 'AUTH');
   if (payloadCheck) return payloadCheck;
 
-  const rateLimit = enforceRateLimit(req, 'AUTH', {
+  const rateLimit = await enforceRateLimit(req, 'AUTH', {
     discriminator: 'accept_invitation',
     customMessage: 'Trop de tentatives. Veuillez patienter.',
   });
@@ -74,8 +75,12 @@ export async function POST(req: Request) {
 
     const invitation = updatedInvitations[0];
 
-    // 2. Création ou mise à niveau du compte dans Supabase Auth
+    // 2. Compte Supabase Auth : création, ou rattachement à un compte existant.
+    //    SÉCURITÉ : on ne modifie JAMAIS le mot de passe d'un compte existant
+    //    (avant : le mot de passe saisi ici remplaçait silencieusement celui du
+    //    compte). La personne se connecte avec son mot de passe habituel.
     let userId: string;
+    let accountAlreadyExisted = false;
     const { data: userData, error: createError } = await admin.auth.admin.createUser({
       email: invitation.email,
       password: body.password,
@@ -83,45 +88,59 @@ export async function POST(req: Request) {
       user_metadata: { first_name: firstName, last_name: lastName },
     });
 
-    if (createError) {
-      // Si l'utilisateur existe déjà dans auth.users, on récupère son identifiant
-      const { data: existingUser } = await admin.from('profiles').select('id').eq('email', invitation.email).maybeSingle();
-      if (existingUser) {
-        userId = existingUser.id;
-        // Met à jour le mot de passe via l'API admin
-        await admin.auth.admin.updateUserById(userId, { password: body.password });
-      } else {
-        // En cas d'échec total de création, on remet l'invitation à 'pending' pour éviter de la perdre
+    if (!createError && userData?.user) {
+      userId = userData.user.id;
+    } else {
+      // generateLink('magiclink') ne crée rien : sert à retrouver le compte existant.
+      const { data: probe } = await admin.auth.admin.generateLink({ type: 'magiclink', email: invitation.email });
+      if (!probe?.user) {
         await admin.from('role_invitations').update({ status: 'pending', accepted_at: null }).eq('id', invitation.id);
         return NextResponse.json(
           { success: false, error: 'Impossible de finaliser ce compte. Veuillez contacter un administrateur.' },
           { status: 409 }
         );
       }
-    } else {
-      userId = userData.user.id;
+      userId = probe.user.id;
+      accountAlreadyExisted = true;
+      // Le lien d'invitation a été reçu sur cette adresse : elle est donc vérifiée.
+      if (!probe.user.email_confirmed_at) {
+        await admin.auth.admin.updateUserById(userId, { email_confirm: true });
+      }
     }
 
-    // 3. Création ou mise à jour du profil applicatif
+    // 3. Profil applicatif — sans jamais rétrograder un rôle supérieur existant.
+    const { data: existingProfile } = await admin
+      .from('profiles')
+      .select('role, first_name, last_name')
+      .eq('id', userId)
+      .maybeSingle();
+    const currentRole = (existingProfile?.role ?? 'student') as SessionProfile['role'];
+    const finalRole = roleAtLeast(currentRole, invitation.role) ? currentRole : invitation.role;
+
     await admin.from('profiles').upsert({
       id: userId,
       email: invitation.email,
-      first_name: firstName,
-      last_name: lastName,
-      role: invitation.role,
+      first_name: existingProfile?.first_name || firstName,
+      last_name: existingProfile?.last_name || lastName,
+      role: finalRole,
       status: 'active',
       updated_at: nowIso,
     });
 
     // 4. Si rôle délégué, création ou activation du profil délégué
     if (invitation.role === 'delegate' && invitation.level_code && invitation.field_code) {
+      const academicYearId = invitation.academic_year_id || CURRENT_ACADEMIC_YEAR_ID;
+      await ensureAcademicYear(admin, academicYearId);
       await admin.from('delegate_profiles').upsert(
         {
           user_id: userId,
           level_code: invitation.level_code,
           field_code: invitation.field_code,
-          academic_year_id: invitation.academic_year_id || '2026-2027',
+          academic_year_id: academicYearId,
           status: 'active',
+          assigned_at: nowIso,
+          revoked_at: null,
+          revoked_by: null,
         },
         { onConflict: 'user_id, academic_year_id' }
       );
@@ -151,8 +170,11 @@ export async function POST(req: Request) {
 
     return NextResponse.json({
       success: true,
-      message: 'Compte activé avec succès. Vous pouvez désormais vous connecter immédiatement.',
-      role: invitation.role,
+      message: accountAlreadyExisted
+        ? 'Invitation acceptée. Connectez-vous avec le mot de passe habituel de ce compte (ou utilisez « Mot de passe oublié »).'
+        : 'Compte activé avec succès. Vous pouvez désormais vous connecter.',
+      role: finalRole,
+      accountAlreadyExisted,
     });
   } catch (error) {
     logSecurityEvent({

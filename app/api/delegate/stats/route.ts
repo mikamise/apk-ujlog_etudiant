@@ -4,7 +4,7 @@ import { getSessionUser } from '@/lib/server-session';
 import { createClient } from '@/lib/supabase/server';
 
 export async function GET(req: NextRequest) {
-  const rateLimit = enforceRateLimit(req, 'READ');
+  const rateLimit = await enforceRateLimit(req, 'READ');
   if (rateLimit) return rateLimit;
   const session = await getSessionUser();
   if (!session || session.profile.role !== 'delegate') {

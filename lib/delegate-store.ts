@@ -5,6 +5,7 @@ import {
   DelegateActionLog,
   DelegateStats,
 } from './delegate-types';
+import { DB_TYPE_TO_UI_TYPE } from './course-adapter';
 
 /**
  * ADAPTATEUR — remplace l'ancien DelegateStore basé sur localStorage.
@@ -45,7 +46,7 @@ export class DelegateStore {
             matiere: String(row.subject_name ?? ''),
             semestre: Number(semesterNumber),
             annee: String(row.academic_year_id ?? ''),
-            type: String(row.type ?? 'CM'),
+            type: DB_TYPE_TO_UI_TYPE[String(row.type ?? '').toLowerCase()] ?? String(row.type ?? 'CM'),
             enseignant: String(row.teacher_name ?? ''),
             niveau: String(row.level_code ?? ''),
             section: String(row.field_code ?? ''),
@@ -54,8 +55,9 @@ export class DelegateStore {
             authorEmail: '',
             authorName: '',
             createdAt: String(row.created_at ?? ''),
-            updatedAt: String(row.created_at ?? ''),
+            updatedAt: String(row.updated_at ?? row.created_at ?? ''),
             telechargements: Number(row.download_count ?? 0),
+            fileName: (row.course_files as { original_file_name?: string }[] | undefined)?.[0]?.original_file_name,
           };
         }
       );

@@ -8,7 +8,7 @@ import { createAdminClient } from '@/lib/supabase/server';
  * Aucun chiffre n'est inventé : une base vide renvoie des compteurs à 0.
  */
 export async function GET(req: NextRequest) {
-  const rateLimit = enforceRateLimit(req, 'ADMIN');
+  const rateLimit = await enforceRateLimit(req, 'ADMIN');
   if (rateLimit) return rateLimit;
 
   const session = await getSessionUser();

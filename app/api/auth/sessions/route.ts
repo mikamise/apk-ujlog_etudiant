@@ -9,7 +9,7 @@ import { getSessionUser } from '@/lib/server-session';
  * changement de mot de passe (qui invalide les sessions existantes).
  */
 export async function GET(req: NextRequest) {
-  const rateLimit = enforceRateLimit(req, 'READ');
+  const rateLimit = await enforceRateLimit(req, 'READ');
   if (rateLimit) return rateLimit;
   const session = await getSessionUser();
   if (!session) return NextResponse.json({ success: false, error: 'Non authentifié.' }, { status: 401 });

@@ -1,29 +1,33 @@
 import { NextRequest } from 'next/server';
 import { jsonSuccess, jsonError } from '@/lib/api-response';
 import { enforceRateLimit } from '@/lib/rate-limiter';
-import { getSessionUser } from '@/lib/server-session';
+import { getActiveDelegateProfile, getSessionUser, roleAtLeast } from '@/lib/server-session';
 import { createAdminClient } from '@/lib/supabase/server';
 import { logSecurityEvent } from '@/lib/security-logger';
-import { MAX_COURSE_FILE_BYTES, verifyUploadedResource } from '@/lib/cloudinary';
+import {
+  ALLOWED_COURSE_FILE_TYPES,
+  MAX_COURSE_FILE_BYTES,
+  mimeForFileName,
+  verifyUploadedResource,
+} from '@/lib/cloudinary';
 
 /**
- * Étape 2 du flux d'upload (Phase 5 §3) : une fois le fichier envoyé
- * directement au navigateur -> Cloudinary, on rattache la ligne
- * course_files. On NE FAIT JAMAIS confiance aux métadonnées envoyées par
- * le client (taille, format) : on les revérifie auprès de l'API Admin
- * Cloudinary elle-même avant d'écrire quoi que ce soit en base. On
- * revérifie aussi, une seconde fois, la propriété du cours — la
- * signature obtenue à l'étape 1 ne suffit pas à elle seule.
+ * Étape 2 du flux d'upload : une fois le fichier envoyé directement du
+ * navigateur à Cloudinary, on rattache la ligne course_files. Les
+ * métadonnées du client (taille, format) ne sont jamais crues : elles sont
+ * revérifiées auprès de l'API Admin Cloudinary. La propriété du cours est
+ * revérifiée elle aussi — la signature de l'étape 1 ne suffit pas.
  */
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id: courseId } = await params;
 
-  const rateLimit = enforceRateLimit(req, 'WRITE', { discriminator: 'attach_course_file' });
+  const rateLimit = await enforceRateLimit(req, 'UPLOAD', { discriminator: 'attach_course_file' });
   if (rateLimit) return rateLimit;
 
   const session = await getSessionUser();
   if (!session) return jsonError('Non authentifié.', 401, undefined, req);
-  if (session.profile.role !== 'delegate' && session.profile.role !== 'admin' && session.profile.role !== 'super_admin') {
+  const isAdmin = roleAtLeast(session.profile.role, 'admin');
+  if (session.profile.role !== 'delegate' && !isAdmin) {
     return jsonError('Accès refusé.', 403, undefined, req);
   }
 
@@ -35,30 +39,39 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   if (!publicId || !originalFileName) {
     return jsonError('Informations de fichier manquantes.', 400, undefined, req);
   }
-  // Le public_id doit être sous le dossier de CE cours précis — empêche de
-  // rattacher à ce cours un fichier uploadé (avec une autre signature) pour
-  // un cours différent.
-  if (!publicId.startsWith(`ujlog/courses/${courseId}/`)) {
+  // Le public_id doit être sous le dossier de CE cours précis.
+  if (!publicId.startsWith(`ujlog/courses/${courseId}/`) || publicId.includes('..')) {
     return jsonError('Fichier non associé à ce cours.', 403, undefined, req);
   }
 
   const admin = createAdminClient();
   const { data: course } = await admin
     .from('courses')
-    .select('id, author_id')
+    .select('id, author_id, level_code, field_code')
     .eq('id', courseId)
     .maybeSingle();
 
   if (!course) return jsonError('Cours introuvable.', 404, undefined, req);
 
-  const isOwner = course.author_id === session.userId;
-  const isAdmin = session.profile.role === 'admin' || session.profile.role === 'super_admin';
-  if (!isOwner && !isAdmin) {
-    return jsonError('Vous ne pouvez déposer un fichier que sur vos propres cours.', 403, undefined, req);
+  if (!isAdmin) {
+    const delegateProfile = await getActiveDelegateProfile(admin, session.userId);
+    const inScope =
+      delegateProfile &&
+      course.author_id === session.userId &&
+      course.level_code === delegateProfile.level_code &&
+      course.field_code === delegateProfile.field_code;
+    if (!inScope) {
+      return jsonError('Vous ne pouvez déposer un fichier que sur vos propres cours.', 403, undefined, req);
+    }
   }
 
-  // Vérité terrain : on interroge Cloudinary lui-même, jamais les valeurs du client.
-  const verified = await verifyUploadedResource(publicId, resourceType);
+  let verified: { bytes: number; format: string; exists: boolean };
+  try {
+    // Vérité terrain : on interroge Cloudinary lui-même, jamais les valeurs du client.
+    verified = await verifyUploadedResource(publicId, resourceType);
+  } catch {
+    return jsonError('Service de stockage indisponible.', 503, undefined, req);
+  }
   if (!verified.exists) {
     return jsonError('Le fichier n’a pas pu être vérifié sur le service de stockage.', 400, undefined, req);
   }
@@ -66,19 +79,12 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     return jsonError('Le fichier dépasse la taille maximale autorisée.', 400, undefined, req);
   }
 
-  const mimeByFormat: Record<string, string> = {
-    pdf: 'application/pdf',
-    doc: 'application/msword',
-    docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-    ppt: 'application/vnd.ms-powerpoint',
-    pptx: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-    xls: 'application/vnd.ms-excel',
-    xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-    jpg: 'image/jpeg',
-    jpeg: 'image/jpeg',
-    png: 'image/png',
-  };
-  const mimeType = mimeByFormat[verified.format] || (resourceType === 'image' ? 'image/jpeg' : 'application/octet-stream');
+  // Images : Cloudinary renvoie le format réel. Fichiers "raw" : format vide,
+  // l'extension du public_id (imposée à l'étape 1) fait foi.
+  const mimeType = (verified.format && ALLOWED_COURSE_FILE_TYPES[verified.format]) || mimeForFileName(publicId);
+  if (!mimeType) {
+    return jsonError('Format de fichier non autorisé.', 400, undefined, req);
+  }
 
   const { data: fileRow, error } = await admin
     .from('course_files')

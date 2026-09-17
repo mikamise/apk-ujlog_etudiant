@@ -1,5 +1,4 @@
-import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
+import { NextResponse, type NextRequest } from 'next/server';
 import { updateSession } from '@/lib/supabase/middleware';
 
 /**
@@ -18,14 +17,8 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL('/super-admin', request.url));
   }
 
-  const response = await updateSession(request);
-
-  response.headers.set('X-Content-Type-Options', 'nosniff');
-  response.headers.set('X-Frame-Options', 'SAMEORIGIN');
-  response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
-  response.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
-
-  return response;
+  // Les en-têtes de sécurité sont définis une seule fois, dans next.config.ts.
+  return updateSession(request);
 }
 
 export const config = {

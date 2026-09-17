@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server';
-import { enforcePayloadSize, enforceRateLimit, getClientIp } from '@/lib/rate-limiter';
+import { ACCOUNT_AUTH_LIMIT, enforcePayloadSize, enforceRateLimit, getClientIp } from '@/lib/rate-limiter';
 import { validateEmail, validatePassword } from '@/lib/security-validator';
 import { loginSchema, safeParseAuthBody } from '@/lib/auth-schemas';
 import { logSecurityEvent } from '@/lib/security-logger';
 import { createClient, createAdminClient } from '@/lib/supabase/server';
-import { ensureUserProfile } from '@/lib/server-session';
+import { ensureUserProfile, serializeSessionUser } from '@/lib/server-session';
 
 export async function POST(req: Request) {
   const ip = getClientIp(req);
@@ -12,7 +12,7 @@ export async function POST(req: Request) {
   const payloadCheck = enforcePayloadSize(req, 'AUTH');
   if (payloadCheck) return payloadCheck;
 
-  const rateLimitCheck = enforceRateLimit(req, 'AUTH', {
+  const rateLimitCheck = await enforceRateLimit(req, 'AUTH', {
     discriminator: 'login',
     customMessage: 'Trop de tentatives de connexion. Veuillez patienter avant de réessayer.',
   });
@@ -42,8 +42,10 @@ export async function POST(req: Request) {
       );
     }
 
-    const accountRateLimit = enforceRateLimit(req, 'AUTH', {
+    const accountRateLimit = await enforceRateLimit(req, 'AUTH', {
       discriminator: `login_target_${emailValidation.cleanEmail}`,
+      customMaxRequests: ACCOUNT_AUTH_LIMIT.maxRequests,
+      global: true,
       customMessage: 'Trop de tentatives sur ce compte. Veuillez patienter.',
     });
     if (accountRateLimit) return accountRateLimit;
@@ -62,6 +64,19 @@ export async function POST(req: Request) {
       email: emailValidation.cleanEmail,
       password,
     });
+
+    const notConfirmed =
+      error && (error.code === 'email_not_confirmed' || /email not confirmed/i.test(error.message));
+    if (notConfirmed) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Veuillez confirmer votre adresse e-mail avant de vous connecter. Vérifiez votre boîte de réception (et les spams).',
+          code: 'EMAIL_NOT_CONFIRMED',
+        },
+        { status: 403 }
+      );
+    }
 
     if (error || !data.user) {
       logSecurityEvent({
@@ -123,16 +138,7 @@ export async function POST(req: Request) {
     return NextResponse.json({
       success: true,
       message: 'Connexion réussie',
-      user: {
-        id: profile.id,
-        email: profile.email,
-        firstName: profile.first_name,
-        lastName: profile.last_name,
-        role: profile.role,
-        status: profile.status,
-        studentProfile: profile.student_profiles ?? null,
-        delegateProfile: profile.delegate_profiles ?? null,
-      },
+      user: serializeSessionUser(profile),
     });
   } catch (error) {
     logSecurityEvent({

@@ -15,6 +15,7 @@ import {
 import { SystemStats, SystemAuditLog } from '@/lib/admin-types';
 import type { AdminTabType } from '@/components/super-admin/admin-sidebar';
 import { motion } from 'motion/react';
+import { CURRENT_ACADEMIC_YEAR_ID } from '@/lib/academic-year';
 
 interface OverviewViewProps {
   stats: SystemStats;
@@ -214,7 +215,7 @@ export function OverviewView({
           <div className="space-y-3 text-xs">
             <div className="p-3 bg-ujlog-cream/70 rounded-2xl border border-ujlog-border flex items-center justify-between">
               <span className="text-ujlog-ink-soft">Année universitaire</span>
-              <span className="font-bold text-ujlog-ink">2026-2027</span>
+              <span className="font-bold text-ujlog-ink">{CURRENT_ACADEMIC_YEAR_ID}</span>
             </div>
 
             <div className="p-3 bg-ujlog-cream/70 rounded-2xl border border-ujlog-border flex items-center justify-between">

@@ -1,10 +1,11 @@
 import { NextResponse } from 'next/server';
-import { enforcePayloadSize, enforceRateLimit, getClientIp } from '@/lib/rate-limiter';
+import { ACCOUNT_AUTH_LIMIT, enforcePayloadSize, enforceRateLimit, getClientIp } from '@/lib/rate-limiter';
 import { validateEmail } from '@/lib/security-validator';
 import { forgotPasswordSchema, safeParseAuthBody } from '@/lib/auth-schemas';
 import { logSecurityEvent } from '@/lib/security-logger';
 import { createAdminClient } from '@/lib/supabase/server';
 import { sendPasswordResetEmail } from '@/lib/email';
+import { buildResetPasswordUrl, getAppUrl } from '@/lib/auth-links';
 
 /**
  * Demande de réinitialisation de mot de passe.
@@ -17,7 +18,7 @@ export async function POST(req: Request) {
   const payloadCheck = enforcePayloadSize(req, 'AUTH');
   if (payloadCheck) return payloadCheck;
 
-  const rateLimit = enforceRateLimit(req, 'AUTH', {
+  const rateLimit = await enforceRateLimit(req, 'AUTH', {
     discriminator: 'forgot_password',
     customMessage: 'Trop de demandes. Veuillez patienter avant de réessayer.',
   });
@@ -46,24 +47,27 @@ export async function POST(req: Request) {
       return genericResponse;
     }
 
-    const accountRateLimit = enforceRateLimit(req, 'AUTH', {
+    const accountRateLimit = await enforceRateLimit(req, 'AUTH', {
       discriminator: `forgot_password_target_${emailValidation.cleanEmail}`,
+      customMaxRequests: ACCOUNT_AUTH_LIMIT.maxRequests,
+      global: true,
       customMessage: 'Trop de demandes pour ce compte. Veuillez patienter.',
     });
     if (accountRateLimit) return accountRateLimit;
 
-    const origin = req.headers.get('origin') || (req.headers.get('referer') ? new URL(req.headers.get('referer')!).origin : '');
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || origin || 'http://localhost:3000';
     const admin = createAdminClient();
+    // 'recovery' ne crée jamais de compte : erreur si l'adresse est inconnue.
     const { data: linkData, error } = await admin.auth.admin.generateLink({
       type: 'recovery',
       email: emailValidation.cleanEmail,
-      options: { redirectTo: `${appUrl}/auth/callback?next=/reset-password` },
     });
 
-    if (!error && linkData?.properties?.action_link) {
+    const hashedToken = linkData?.properties?.hashed_token;
+    if (!error && hashedToken) {
       try {
-        await sendPasswordResetEmail(emailValidation.cleanEmail, linkData.properties.action_link);
+        // Lien direct vers l'app : le jeton n'est vérifié qu'au moment où
+        // l'utilisateur valide son nouveau mot de passe (voir /api/auth/reset-password).
+        await sendPasswordResetEmail(emailValidation.cleanEmail, buildResetPasswordUrl(getAppUrl(req), hashedToken));
       } catch (emailErr) {
         logSecurityEvent({
           eventType: 'SYSTEM_ERROR',

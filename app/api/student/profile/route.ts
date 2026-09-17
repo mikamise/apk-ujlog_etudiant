@@ -24,7 +24,7 @@ const updateProfileSchema = z.object({
 });
 
 export async function PATCH(req: NextRequest) {
-  const rateLimit = enforceRateLimit(req, 'WRITE', { discriminator: 'update_student_profile' });
+  const rateLimit = await enforceRateLimit(req, 'WRITE', { discriminator: 'update_student_profile' });
   if (rateLimit) return rateLimit;
 
   const session = await getSessionUser();

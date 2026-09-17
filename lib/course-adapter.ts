@@ -27,7 +27,7 @@ export interface CourseItem {
   niveauCode?: string;
 }
 
-const DB_TYPE_TO_UI_TYPE: Record<string, CourseResourceItemType> = {
+export const DB_TYPE_TO_UI_TYPE: Record<string, CourseResourceItemType> = {
   cm: 'CM',
   td: 'TD',
   tp: 'TP',
@@ -36,6 +36,27 @@ const DB_TYPE_TO_UI_TYPE: Record<string, CourseResourceItemType> = {
   sujet: 'Sujets d\'examen',
   pv: 'Résultats d\'examen',
 };
+
+export const DB_COURSE_TYPES = ['cm', 'td', 'tp', 'pv', 'sujet', 'examen_resultat', 'td_resultat'] as const;
+export type DbCourseType = (typeof DB_COURSE_TYPES)[number];
+
+const UI_TYPE_TO_DB_TYPE: Record<string, DbCourseType> = {
+  cm: 'cm',
+  td: 'td',
+  tp: 'tp',
+  pv: 'pv',
+  sujet: 'sujet',
+  'sujets d\'examen': 'sujet',
+  'résultats de td': 'td_resultat',
+  'résultats d\'examen': 'examen_resultat',
+  examen_resultat: 'examen_resultat',
+  td_resultat: 'td_resultat',
+};
+
+/** "CM" | "Résultats de TD" | "td_resultat"... -> valeur de l'enum PostgreSQL course_type, ou null si inconnue. */
+export function toDbCourseType(input: unknown): DbCourseType | null {
+  return UI_TYPE_TO_DB_TYPE[String(input ?? '').trim().toLowerCase()] ?? null;
+}
 
 /** Convertit une ligne "courses" issue de Supabase vers le format attendu par l'UI existante. */
 export function mapCourseRowToItem(row: Record<string, unknown>): CourseItem {

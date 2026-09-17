@@ -5,7 +5,7 @@ import { getSessionUser } from '@/lib/server-session';
 import { createClient } from '@/lib/supabase/server';
 
 export async function GET(req: NextRequest) {
-  const rateLimit = enforceRateLimit(req, 'READ', { discriminator: 'list_notifications' });
+  const rateLimit = await enforceRateLimit(req, 'READ', { discriminator: 'list_notifications' });
   if (rateLimit) return rateLimit;
 
   const session = await getSessionUser();
@@ -26,5 +26,5 @@ export async function GET(req: NextRequest) {
 
   if (error) return jsonError('Impossible de récupérer les notifications.', 500, undefined, req);
 
-  return jsonSuccess(data ?? [], buildPaginationMeta(page, limit, count ?? 0), 200, req);
+  return jsonSuccess(data ?? [], buildPaginationMeta(count ?? 0, page, limit), 200, req);
 }

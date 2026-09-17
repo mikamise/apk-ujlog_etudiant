@@ -15,7 +15,7 @@ import { logSecurityEvent } from '@/lib/security-logger';
  * de l'appel — rien n'est précalculé ni inventé (Phase 8 §3).
  */
 export async function GET(req: NextRequest) {
-  const rateLimit = enforceRateLimit(req, 'ADMIN');
+  const rateLimit = await enforceRateLimit(req, 'ADMIN');
   if (rateLimit) return rateLimit;
 
   const session = await getSessionUser();

@@ -4,6 +4,9 @@ import { enforcePayloadSize, enforceRateLimit, getClientIp } from '@/lib/rate-li
 import { validateEmail, sanitizeString } from '@/lib/security-validator';
 import { logSecurityEvent } from '@/lib/security-logger';
 import { createClient, createAdminClient } from '@/lib/supabase/server';
+import { CURRENT_ACADEMIC_YEAR_ID } from '@/lib/server-session';
+import { LEVEL_CODE_TO_LABEL, FIELD_CODE_TO_LABEL } from '@/lib/academic-reference';
+import { getAppUrl } from '@/lib/auth-links';
 import { sendRoleInvitationEmail } from '@/lib/email';
 
 const VALID_ROLES = ['delegate', 'admin', 'super_admin'] as const;
@@ -57,7 +60,7 @@ export async function POST(req: Request) {
   const payloadCheck = enforcePayloadSize(req, 'AUTH');
   if (payloadCheck) return payloadCheck;
 
-  const rateLimit = enforceRateLimit(req, 'AUTH', {
+  const rateLimit = await enforceRateLimit(req, 'AUTH', {
     discriminator: 'create_invitation',
     customMessage: 'Trop de demandes d’invitation. Veuillez patienter.',
   });
@@ -100,11 +103,11 @@ export async function POST(req: Request) {
       );
     }
 
-    const levelCode = role === 'delegate' ? sanitizeString(body.levelCode, 20) : null;
-    const fieldCode = role === 'delegate' ? sanitizeString(body.fieldCode, 40) : null;
-    if (role === 'delegate' && (!levelCode || !fieldCode)) {
+    const levelCode = role === 'delegate' ? sanitizeString(body.levelCode, 20).toLowerCase() : null;
+    const fieldCode = role === 'delegate' ? sanitizeString(body.fieldCode, 40).toLowerCase() : null;
+    if (role === 'delegate' && (!levelCode || !fieldCode || !LEVEL_CODE_TO_LABEL[levelCode] || !FIELD_CODE_TO_LABEL[fieldCode])) {
       return NextResponse.json(
-        { success: false, error: 'Le niveau et la filière sont obligatoires pour une invitation Délégué.' },
+        { success: false, error: 'Un niveau et une filière valides sont obligatoires pour une invitation Délégué.' },
         { status: 400 }
       );
     }
@@ -122,6 +125,7 @@ export async function POST(req: Request) {
       role,
       level_code: levelCode,
       field_code: fieldCode,
+      academic_year_id: role === 'delegate' ? CURRENT_ACADEMIC_YEAR_ID : null,
       token_hash: tokenHash,
       status: 'pending',
       invited_by: user.id,
@@ -132,9 +136,31 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: false, error: 'Impossible de créer l’invitation.' }, { status: 500 });
     }
 
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || '';
-    const activateUrl = `${appUrl}/invitation/accepter?token=${rawToken}`;
-    await sendRoleInvitationEmail(emailValidation.cleanEmail, role, activateUrl, expiresAt);
+    const activateUrl = `${getAppUrl(req)}/invitation/accepter?token=${encodeURIComponent(rawToken)}`;
+    let emailSent = true;
+    try {
+      await sendRoleInvitationEmail(emailValidation.cleanEmail, role, activateUrl, expiresAt);
+    } catch (emailErr) {
+      emailSent = false;
+      logSecurityEvent({
+        eventType: 'SYSTEM_ERROR',
+        severity: 'ERROR',
+        ip,
+        details: { route: '/api/admin/invitations', step: 'send_invitation_email', error: String(emailErr) },
+      });
+      // Une invitation dont le lien n'a jamais été envoyé ne sert à rien : on la révoque.
+      await admin
+        .from('role_invitations')
+        .update({ status: 'revoked', revoked_at: new Date().toISOString() })
+        .eq('token_hash', tokenHash);
+    }
+
+    if (!emailSent) {
+      return NextResponse.json(
+        { success: false, error: 'L’e-mail d’invitation n’a pas pu être envoyé (vérifiez la configuration Resend). Aucune invitation n’a été créée.' },
+        { status: 502 }
+      );
+    }
 
     await admin.from('audit_logs').insert({
       user_id: user.id,

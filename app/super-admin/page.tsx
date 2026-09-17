@@ -48,7 +48,7 @@ export default function SuperAdminDashboardPage() {
     totalDelegates: 0,
     totalCourses: 0,
     recentPublicationsCount: 0,
-    activeUsersCount: 42,
+    activeUsersCount: 0,
     studentsByLevel: {},
     studentsBySection: {},
     coursesByLevel: {},

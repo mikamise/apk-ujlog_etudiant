@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useState, Suspense } from 'react';
@@ -46,118 +45,77 @@ function ConfirmAccountContent() {
   const [resendStatus, setResendStatus] = useState<'idle' | 'sending' | 'sent'>('idle');
   const [customError, setCustomError] = useState('');
 
+  const [confirmedEmail, setConfirmedEmail] = useState('');
+
+  const loginUrl = confirmedEmail
+    ? `/login?confirmed=1&email=${encodeURIComponent(confirmedEmail)}`
+    : '/login?confirmed=1';
+
   useEffect(() => {
-    const supabase = createClient();
     let cancelled = false;
 
-    const processConfirmation = async () => {
-      // 1. Lire paramètres de requête et hash URL
-      const token_hash = searchParams?.get('token_hash');
-      const code = searchParams?.get('code');
-      const type = searchParams?.get('type') || 'signup';
-      const errorParam = searchParams?.get('error') || searchParams?.get('error_description');
-
-      // 2. Hash fragment (#access_token=...&refresh_token=...)
-      let hashAccessToken: string | null = null;
-      let hashRefreshToken: string | null = null;
-      if (typeof window !== 'undefined' && window.location.hash) {
-        const hash = new URLSearchParams(window.location.hash.substring(1));
-        hashAccessToken = hash.get('access_token');
-        hashRefreshToken = hash.get('refresh_token');
-      }
-
-      const onVerificationSuccess = (user: any) => {
-        if (user) {
-          const meta = user.user_metadata || {};
-          ClientAuthService.setCachedProfile({
-            id: user.id,
-            email: user.email || '',
-            firstName: meta.first_name || '',
-            lastName: meta.last_name || '',
-            civility: meta.civility,
-            level: meta.level_code || 'l1',
-            field: meta.field_code || 'tronc_commun',
-            role: meta.role || 'student',
-            studentId: meta.student_id,
-            academicYear: '2026-2027',
-          });
-        }
-        setState('success');
-        setTimeout(() => {
-          if (!cancelled) {
-            const role = user?.user_metadata?.role || 'student';
-            const destination =
-              role === 'admin' || role === 'super_admin'
-                ? '/super-admin'
-                : role === 'delegate'
-                ? '/dashboard/delegue'
-                : '/dashboard';
-            window.location.href = destination;
-          }
-        }, 1200);
-      };
-
-      // Si Supabase a renvoyé un token_hash (flux PKCE direct)
-      if (token_hash) {
-        try {
-          const { data, error } = await supabase.auth.verifyOtp({
-            token_hash,
-            type: (type as any) || 'signup',
-          });
-          if (!cancelled && !error && data.user) {
-            onVerificationSuccess(data.user);
-            return;
-          }
-        } catch {
-          // continue fallback
-        }
-      }
-
-      // Si Supabase a renvoyé un code PKCE
-      if (code) {
-        try {
-          const { data, error } = await supabase.auth.exchangeCodeForSession(code);
-          if (!cancelled && !error && data.user) {
-            onVerificationSuccess(data.user);
-            return;
-          }
-        } catch {
-          // continue fallback
-        }
-      }
-
-      // Si les jetons sont dans le hash (#access_token=...)
-      if (hashAccessToken && hashRefreshToken) {
-        try {
-          const { data, error } = await supabase.auth.setSession({
-            access_token: hashAccessToken,
-            refresh_token: hashRefreshToken,
-          });
-          if (!cancelled && !error && data.user) {
-            onVerificationSuccess(data.user);
-            return;
-          }
-        } catch {
-          // continue fallback
-        }
-      }
-
-      // Vérifier si une session est déjà active
-      try {
-        const { data, error } = await supabase.auth.getUser();
-        if (!cancelled && !error && data.user) {
-          onVerificationSuccess(data.user);
-          return;
-        }
-      } catch {
-        // continue
-      }
-
+    const goToLogin = (email?: string) => {
       if (cancelled) return;
+      if (email) setConfirmedEmail(email);
+      setState('success');
+      setTimeout(() => {
+        if (cancelled) return;
+        const target = email ? `/login?confirmed=1&email=${encodeURIComponent(email)}` : '/login?confirmed=1';
+        router.replace(target);
+      }, 2500);
+    };
+
+    const processConfirmation = async () => {
+      const tokenHash = searchParams?.get('token_hash');
+      const type = searchParams?.get('type') || 'signup';
+      const errorParam = searchParams?.get('error_description') || searchParams?.get('error');
+
+      // 1. Lien actuel : /auth/confirm?token_hash=...&type=signup
+      //    Vérifié côté serveur, sans ouvrir de session (voir /api/auth/confirm-email).
+      if (tokenHash) {
+        try {
+          const res = await fetch('/api/auth/confirm-email', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ token_hash: tokenHash, type }),
+          });
+          const payload = await res.json().catch(() => null);
+          if (cancelled) return;
+          if (res.ok && payload?.success) {
+            goToLogin(payload.email);
+            return;
+          }
+          setCustomError(payload?.error || '');
+          setState('invalid');
+        } catch {
+          if (cancelled) return;
+          setCustomError('Erreur réseau pendant la vérification. Vérifiez votre connexion puis rouvrez le lien.');
+          setState('invalid');
+        }
+        return;
+      }
 
       if (errorParam) {
-        setCustomError(decodeURIComponent(errorParam));
+        setCustomError(decodeURIComponent(errorParam.replace(/\+/g, ' ')));
+        setState('invalid');
+        return;
       }
+
+      // 2. Anciens liens (envoyés avant ce correctif) : Supabase a DÉJÀ confirmé
+      //    l'adresse avant de rediriger ici avec #access_token=... ou ?code=...
+      //    On n'ouvre pas de session : on nettoie et on envoie vers la connexion.
+      const hash = typeof window !== 'undefined' ? new URLSearchParams(window.location.hash.substring(1)) : null;
+      if (hash?.get('access_token') || searchParams?.get('code')) {
+        try {
+          await createClient().auth.signOut({ scope: 'local' });
+        } catch {
+          // ignore
+        }
+        ClientAuthService.clearLocalState();
+        goToLogin();
+        return;
+      }
+
       setState('invalid');
     };
 
@@ -191,9 +149,9 @@ function ConfirmAccountContent() {
       <Shell>
         <div className="flex flex-col items-center text-center py-6 space-y-3">
           <Loader2 className="w-8 h-8 text-ujlog-primary animate-spin" />
-          <h2 className="font-display font-bold text-sm text-ujlog-ink">Validation de votre lien...</h2>
+          <h2 className="font-display font-bold text-sm text-ujlog-ink">Confirmation de votre adresse e-mail...</h2>
           <p className="text-xs text-ujlog-ink-soft font-medium max-w-xs">
-            Vérification de l&apos;adresse e-mail et initialisation de votre session sécurisée.
+            Merci de patienter quelques secondes.
           </p>
         </div>
       </Shell>
@@ -269,27 +227,24 @@ function ConfirmAccountContent() {
         <div className="w-14 h-14 bg-ujlog-secondary-50 text-ujlog-secondary rounded-2xl flex items-center justify-center mb-4 border border-ujlog-secondary-100">
           <CheckCircle className="w-7 h-7" />
         </div>
-        <h1 className="font-display text-lg font-bold text-ujlog-ink mb-1.5">Compte confirmé avec succès !</h1>
+        <h1 className="font-display text-lg font-bold text-ujlog-ink mb-1.5">Adresse e-mail confirmée !</h1>
         <p className="text-xs text-ujlog-ink-soft leading-relaxed mb-5 max-w-xs">
-          Votre adresse e-mail a été vérifiée. Votre session sécurisée est active.
+          Votre compte est activé. Connectez-vous maintenant avec votre adresse e-mail et votre mot de passe pour accéder à votre tableau de bord.
         </p>
 
         <div className="w-full space-y-3">
-          <a
-            href="/dashboard"
-            onClick={(e) => {
-              e.preventDefault();
-              window.location.href = '/dashboard';
-            }}
+          <Link
+            href={loginUrl}
             className="w-full bg-terracotta-gradient text-white py-3.5 rounded-2xl font-bold text-sm hover:brightness-105 transition-all text-center flex items-center justify-center gap-2 shadow-glow-orange cursor-pointer"
           >
-            <span>Accéder au tableau de bord</span>
+            <LogIn className="w-4 h-4" />
+            <span>Se connecter</span>
             <ArrowRight className="w-4 h-4" />
-          </a>
+          </Link>
 
           <div className="flex items-center justify-center gap-2 text-xs text-ujlog-ink-soft pt-1">
             <Loader2 className="w-3.5 h-3.5 text-ujlog-primary animate-spin" />
-            <span>Redirection automatique en cours...</span>
+            <span>Redirection vers la page de connexion...</span>
           </div>
         </div>
       </div>

@@ -36,7 +36,11 @@ export const RATE_LIMITS: Record<RateLimitCategory, RateLimitCategoryConfig> = {
   // Authentication: Strictest protection against credential brute-force and stuffing
   AUTH: {
     windowMs: 60 * 1000,          // 1 minute
-    maxRequests: 5,               // 5 attempts / min
+    // Par IP : une université entière peut partager la même IP publique (NAT),
+    // la limite doit donc tolérer plusieurs étudiants simultanés. La vraie
+    // protection anti-brute-force est la limite PAR COMPTE (voir
+    // ACCOUNT_AUTH_LIMIT), indépendante de l'IP.
+    maxRequests: 20,              // 20 attempts / min per IP
     lockoutMs: 15 * 60 * 1000,    // 15 min temporary lockout on sustained abuse
     maxPayloadBytes: 64 * 1024,   // 64 KB max body
   },
@@ -92,6 +96,9 @@ export const RATE_LIMITS: Record<RateLimitCategory, RateLimitCategoryConfig> = {
     maxPayloadBytes: 2 * 1024 * 1024, // 2 MB
   },
 };
+
+/** Limite stricte par compte ciblé (login, mot de passe oublié...), quelle que soit l'IP. */
+export const ACCOUNT_AUTH_LIMIT = { maxRequests: 5 } as const;
 
 interface RateLimitRecord {
   timestamps: number[];
@@ -152,14 +159,18 @@ export interface QuotaResult {
  * Extracts client IP safely from request headers.
  */
 export function getClientIp(req: Request): string {
+  // En-têtes posés par la plateforme d'hébergement (non falsifiables par le
+  // client) en priorité ; x-forwarded-for peut contenir des valeurs injectées.
+  const platformIp =
+    req.headers.get('x-nf-client-connection-ip') || // Netlify
+    req.headers.get('x-vercel-forwarded-for') || // Vercel
+    req.headers.get('cf-connecting-ip') || // Cloudflare
+    req.headers.get('x-real-ip');
+  if (platformIp) return platformIp.split(',')[0].trim();
+
   const forwardedFor = req.headers.get('x-forwarded-for');
   if (forwardedFor) {
-    const ips = forwardedFor.split(',');
-    return ips[0].trim();
-  }
-  const realIp = req.headers.get('x-real-ip');
-  if (realIp) {
-    return realIp.trim();
+    return forwardedFor.split(',')[0].trim();
   }
   return '127.0.0.1';
 }
@@ -173,10 +184,12 @@ export function buildRateLimitKey(
   category: RateLimitCategory,
   req: Request,
   userId?: string,
-  discriminator?: string
+  discriminator?: string,
+  global?: boolean
 ): string {
   const ip = getClientIp(req);
-  const subjectKey = userId ? `usr_${userId}` : `ip_${ip}`;
+  // global : compteur commun à toutes les IP (ex. tentatives sur un même compte).
+  const subjectKey = global ? 'global' : userId ? `usr_${userId}` : `ip_${ip}`;
   const disc = discriminator ? `:${discriminator}` : '';
   return `${category}:${subjectKey}${disc}`;
 }
@@ -192,6 +205,7 @@ export function checkRateLimit(
     discriminator?: string;
     customMaxRequests?: number;
     customWindowMs?: number;
+    global?: boolean;
   }
 ): RateLimitResult {
   const config = RATE_LIMITS[category];
@@ -199,7 +213,7 @@ export function checkRateLimit(
   const maxRequests = options?.customMaxRequests ?? config.maxRequests;
   const lockoutMs = config.lockoutMs;
 
-  const key = buildRateLimitKey(category, req, options?.userId, options?.discriminator);
+  const key = buildRateLimitKey(category, req, options?.userId, options?.discriminator, options?.global);
   const now = Date.now();
 
   let record = memoryStore.get(key);
@@ -355,19 +369,125 @@ export function rateLimitExceededResponse(result: RateLimitResult, customMessage
 }
 
 /**
+ * ==============================================================================
+ * STOCKAGE PARTAGÉ (Supabase)
+ * ==============================================================================
+ * Les Map en mémoire ci-dessus ne protègent rien en serverless (Netlify /
+ * Vercel) : chaque instance a sa propre mémoire et redémarre souvent, donc un
+ * attaquant répartit simplement ses tentatives. Pour les catégories sensibles,
+ * le compteur est stocké en base via la fonction atomique `rate_limit_hit`
+ * (migration 0010). Si la migration n'est pas encore appliquée ou si la base
+ * ne répond pas, on retombe sur le store mémoire (dégradé mais non bloquant).
+ */
+const PERSISTED_CATEGORIES = new Set<RateLimitCategory>(['AUTH', 'WRITE', 'UPLOAD', 'DOWNLOAD', 'SUPER_ADMIN']);
+let persistentStoreUnavailableLogged = false;
+
+async function hitPersistentCounter(
+  key: string,
+  windowSeconds: number,
+  maxRequests: number,
+  lockoutSeconds: number
+): Promise<{ allowed: boolean; count: number; resetAt: number; lockedUntil: number | null } | null> {
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) return null;
+  try {
+    const { createAdminClient } = await import('@/lib/supabase/server');
+    const { data, error } = await createAdminClient().rpc('rate_limit_hit', {
+      p_key: key,
+      p_window_seconds: windowSeconds,
+      p_max: maxRequests,
+      p_lockout_seconds: lockoutSeconds,
+    });
+    if (error || !data) {
+      if (!persistentStoreUnavailableLogged) {
+        persistentStoreUnavailableLogged = true;
+        console.warn('[rate-limiter] Stockage partagé indisponible (migration 0010 appliquée ?) — repli mémoire.', error?.message);
+      }
+      return null;
+    }
+    const row = data as { allowed: boolean; count: number; reset_at: string; locked_until: string | null };
+    return {
+      allowed: row.allowed,
+      count: row.count,
+      resetAt: new Date(row.reset_at).getTime(),
+      lockedUntil: row.locked_until ? new Date(row.locked_until).getTime() : null,
+    };
+  } catch {
+    return null;
+  }
+}
+
+async function checkRateLimitShared(
+  req: Request,
+  category: RateLimitCategory,
+  options?: { userId?: string; discriminator?: string; customMaxRequests?: number; global?: boolean }
+): Promise<RateLimitResult> {
+  if (!PERSISTED_CATEGORIES.has(category)) return checkRateLimit(req, category, options);
+
+  const config = RATE_LIMITS[category];
+  const maxRequests = options?.customMaxRequests ?? config.maxRequests;
+  const key = buildRateLimitKey(category, req, options?.userId, options?.discriminator, options?.global);
+  const hit = await hitPersistentCounter(
+    key,
+    Math.ceil(config.windowMs / 1000),
+    maxRequests,
+    Math.ceil((config.lockoutMs ?? 0) / 1000)
+  );
+  if (!hit) return checkRateLimit(req, category, options);
+
+  const now = Date.now();
+  const blockedUntil = hit.lockedUntil && hit.lockedUntil > now ? hit.lockedUntil : hit.resetAt;
+  return {
+    success: hit.allowed,
+    limit: maxRequests,
+    remaining: Math.max(0, maxRequests - hit.count),
+    reset: Math.ceil(blockedUntil / 1000),
+    retryAfter: hit.allowed ? undefined : Math.max(1, Math.ceil((blockedUntil - now) / 1000)),
+    category,
+    isLockedOut: Boolean(hit.lockedUntil && hit.lockedUntil > now),
+  };
+}
+
+async function checkDailyQuotaShared(
+  category: RateLimitCategory,
+  req: Request,
+  userId?: string,
+  discriminator?: string
+): Promise<QuotaResult> {
+  const config = RATE_LIMITS[category];
+  const maxDaily = config.dailyQuota || 500;
+  const key = `quota:${buildRateLimitKey(category, req, userId, discriminator)}`;
+  const hit = await hitPersistentCounter(key, 24 * 60 * 60, maxDaily, 0);
+  if (!hit) return checkDailyQuota(category, req, userId, discriminator);
+
+  const now = Date.now();
+  return {
+    success: hit.allowed,
+    limit: maxDaily,
+    current: hit.count,
+    remaining: Math.max(0, maxDaily - hit.count),
+    reset: Math.ceil(hit.resetAt / 1000),
+    retryAfter: hit.allowed ? undefined : Math.max(1, Math.ceil((hit.resetAt - now) / 1000)),
+  };
+}
+
+/**
  * Enforce rate limit directly in an API Route handler.
  * Returns null if allowed, or standard 429 NextResponse if rate limit breached.
  */
-export function enforceRateLimit(
+export async function enforceRateLimit(
   req: Request,
   category: RateLimitCategory,
   options?: {
     userId?: string;
     discriminator?: string;
     customMessage?: string;
+    /** Surcharge du nombre maximal de requêtes de la catégorie. */
+    customMaxRequests?: number;
+    /** Compteur commun à toutes les IP (limite par compte ciblé). */
+    global?: boolean;
   }
-): NextResponse | null {
-  const result = checkRateLimit(req, category, options);
+): Promise<NextResponse | null> {
+  const result = await checkRateLimitShared(req, category, options);
 
   if (!result.success) {
     logSecurityEvent({
@@ -393,7 +513,7 @@ export function enforceRateLimit(
 /**
  * Enforce daily resource quota in an API Route handler.
  */
-export function enforceDailyQuota(
+export async function enforceDailyQuota(
   req: Request,
   category: RateLimitCategory,
   options?: {
@@ -401,8 +521,8 @@ export function enforceDailyQuota(
     discriminator?: string;
     customMessage?: string;
   }
-): NextResponse | null {
-  const quota = checkDailyQuota(category, req, options?.userId, options?.discriminator);
+): Promise<NextResponse | null> {
+  const quota = await checkDailyQuotaShared(category, req, options?.userId, options?.discriminator);
 
   if (!quota.success) {
     logSecurityEvent({
