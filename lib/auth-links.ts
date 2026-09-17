@@ -1,4 +1,5 @@
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
+import { getSupabaseUrl } from '@/lib/supabase/config';
 
 /**
  * Liens d'authentification envoyés par e-mail (confirmation / réinitialisation).
@@ -15,10 +16,31 @@ import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 
 export type EmailLinkType = 'signup' | 'recovery' | 'magiclink' | 'email';
 
-/** URL publique de l'app : variable d'env en priorité, sinon origine de la requête. */
+/** Valeurs d'exemple copiées depuis .env.example, à ne jamais utiliser dans un lien. */
+const PLACEHOLDER_URL_PATTERN = /votre-|your-|example\.(com|org)|localhost:0/i;
+
+function usableUrl(value: string | undefined): string | null {
+  const trimmed = value?.trim().replace(/\/+$/, '');
+  if (!trimmed || PLACEHOLDER_URL_PATTERN.test(trimmed)) return null;
+  try {
+    const url = new URL(trimmed.startsWith('http') ? trimmed : `https://${trimmed}`);
+    return url.origin;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * URL publique de l'app utilisée dans les liens envoyés par e-mail.
+ * Ordre : NEXT_PUBLIC_APP_URL (si ce n'est pas une valeur d'exemple),
+ * URL du site fournie par Netlify (URL) ou Vercel, puis origine de la requête.
+ */
 export function getAppUrl(req: Request): string {
-  const fromEnv = process.env.NEXT_PUBLIC_APP_URL?.trim();
-  if (fromEnv) return fromEnv.replace(/\/+$/, '');
+  const fromEnv =
+    usableUrl(process.env.NEXT_PUBLIC_APP_URL) ||
+    usableUrl(process.env.URL) ||
+    usableUrl(process.env.VERCEL_PROJECT_PRODUCTION_URL);
+  if (fromEnv) return fromEnv;
 
   const origin = req.headers.get('origin');
   if (origin) return origin.replace(/\/+$/, '');
@@ -50,7 +72,7 @@ export function buildResetPasswordUrl(appUrl: string, hashedToken: string): stri
  * vérifier un lien ne connecte PAS l'utilisateur dans le navigateur.
  */
 export function createStatelessAuthClient() {
-  return createSupabaseClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
+  return createSupabaseClient(getSupabaseUrl(), process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
     auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
   });
 }

@@ -8,6 +8,7 @@
  * - URL est fournie automatiquement par Netlify (URL principale du site)
  */
 export default async function dispatchEmails() {
+  // URL est fournie automatiquement par Netlify (plus fiable qu'une variable saisie à la main).
   const baseUrl = process.env.URL || process.env.NEXT_PUBLIC_APP_URL;
   const secret = process.env.CRON_SECRET;
 

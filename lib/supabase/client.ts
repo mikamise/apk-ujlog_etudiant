@@ -1,4 +1,5 @@
 import { createBrowserClient } from '@supabase/ssr';
+import { getSupabaseUrl } from '@/lib/supabase/config';
 
 /**
  * Client Supabase pour le navigateur (Client Components uniquement).
@@ -6,7 +7,7 @@ import { createBrowserClient } from '@supabase/ssr';
  */
 export function createClient() {
   return createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    getSupabaseUrl(),
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   );
 }

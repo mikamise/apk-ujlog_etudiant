@@ -81,6 +81,12 @@ function uploadToCloudinary(
       }
       if (xhr.status >= 200 && xhr.status < 300 && data?.public_id) {
         resolve({ public_id: data.public_id });
+      } else if ((xhr.status === 401 || xhr.status === 403) && /permission/i.test(data?.error?.message ?? '')) {
+        reject(
+          new Error(
+            'Le service de stockage refuse l’envoi : la clé API Cloudinary n’a pas la permission de déposer des fichiers. Un administrateur doit utiliser une clé avec les droits d’upload.'
+          )
+        );
       } else {
         reject(new Error(data?.error?.message ? `Stockage : ${data.error.message}` : 'Échec de l’envoi du fichier.'));
       }
