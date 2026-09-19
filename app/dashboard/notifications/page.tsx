@@ -118,16 +118,24 @@ export default function NotificationsPage() {
           </p>
         </div>
 
-        {unreadCount > 0 && (
-          <button
-            onClick={markAllAsRead}
-            disabled={markingAll}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-terracotta-gradient text-white rounded-2xl text-xs font-bold shadow-glow-orange hover:brightness-110 transition-all cursor-pointer disabled:opacity-50"
-          >
-            <CheckCheck className="w-3.5 h-3.5" />
-            <span>Tout marquer comme lu</span>
-          </button>
-        )}
+        <div className="flex items-stretch gap-2 self-start sm:self-auto">
+          <div className="flex flex-col items-center justify-center px-4 py-2 rounded-2xl bg-terracotta-gradient text-white shadow-glow-orange min-w-[76px]">
+            <span className="font-display text-xl font-bold leading-none">{notifications.length}</span>
+            <span className="text-[8px] font-bold uppercase tracking-wider mt-1 opacity-90">
+              {notifications.length <= 1 ? 'Notification' : 'Notifications'}
+            </span>
+          </div>
+          {unreadCount > 0 && (
+            <button
+              onClick={markAllAsRead}
+              disabled={markingAll}
+              className="inline-flex items-center gap-1.5 px-3.5 rounded-2xl border border-ujlog-border bg-white text-ujlog-ink-soft text-xs font-bold hover:bg-ujlog-cream transition-all cursor-pointer disabled:opacity-50"
+            >
+              <CheckCheck className="w-3.5 h-3.5" />
+              <span>Tout marquer comme lu</span>
+            </button>
+          )}
+        </div>
       </div>
 
       {loading ? (
@@ -144,7 +152,7 @@ export default function NotificationsPage() {
           <div className="w-12 h-12 bg-ujlog-cream/90 rounded-2xl flex items-center justify-center text-ujlog-ink-soft/60">
             <Bell className="w-6 h-6" />
           </div>
-          <h2 className="text-sm sm:text-base font-bold text-ujlog-ink tracking-tight">
+          <h2 className="font-display text-sm sm:text-base font-bold text-ujlog-ink tracking-tight">
             Aucune nouvelle notification
           </h2>
           <p className="text-ujlog-ink-soft font-normal text-xs leading-relaxed max-w-xs">

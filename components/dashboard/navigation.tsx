@@ -7,19 +7,21 @@ import { usePathname } from 'next/navigation';
 import { useUser } from '@/hooks/use-user';
 import { LEVEL_CODE_TO_LABEL, FIELD_CODE_TO_LABEL } from '@/lib/academic-reference';
 import { ContactModal } from './contact-modal';
-import { 
-  Home, 
-  BookOpen, 
-  Bookmark, 
-  User, 
-  Bell, 
+import {
+  Home,
+  BookOpen,
+  Bookmark,
+  User,
+  Bell,
   LogOut,
   Sparkles,
   ShieldCheck,
   KeyRound,
   Headphones,
   ChevronDown,
-  Archive
+  Archive,
+  MoreHorizontal,
+  X
 } from 'lucide-react';
 import { CURRENT_ACADEMIC_YEAR_ID } from '@/lib/academic-year';
 
@@ -28,17 +30,30 @@ export function DashboardNavigation() {
   const { user, logout } = useUser();
   const [isContactModalOpen, setIsContactModalOpen] = useState(false);
   const [isGestionOpen, setIsGestionOpen] = useState(false);
+  const [isMoreOpen, setIsMoreOpen] = useState(false);
 
   const isDelegate = Boolean(user?.isDelegate || user?.role === 'delegate');
 
+  // 4 raccourcis directs dans la barre — le reste (profil, gestion, archives,
+  // support, déconnexion) est regroupé dans le tiroir "Plus" sur mobile.
   const navItems = [
     { label: 'Accueil', href: '/dashboard', icon: Home },
     { label: 'Mes Cours', href: '/dashboard/cours', icon: BookOpen },
     { label: 'Sauvegardes', href: '/dashboard/sauvegardes', icon: Bookmark },
     { label: 'Notifications', href: '/dashboard/notifications', icon: Bell },
-    { label: 'Mon Profil', href: '/dashboard/profil', icon: User },
-    { label: 'Gestion', href: '/dashboard/delegue', icon: ShieldCheck },
   ];
+
+  // La sidebar desktop garde tout visible directement (pas besoin du tiroir).
+  const sidebarNavItems = [...navItems, { label: 'Mon Profil', href: '/dashboard/profil', icon: User }];
+
+  const moreItems = [
+    { label: 'Mon Profil', href: '/dashboard/profil', icon: User },
+    { label: 'Délégué', href: '/dashboard/delegue', icon: ShieldCheck },
+    { label: 'Archives', href: '/dashboard/archives', icon: Archive },
+    { label: 'Support', href: '#support', icon: Headphones, action: () => setIsContactModalOpen(true) },
+  ];
+
+  const isMoreActive = moreItems.some((i) => i.href !== '#support' && pathname?.startsWith(i.href));
 
   return (
     <>
@@ -46,37 +61,26 @@ export function DashboardNavigation() {
 
       {/* Desktop & Tablet Sidebar */}
       <aside className="hidden lg:flex flex-col w-64 bg-white border-r border-ujlog-border min-h-screen p-4 justify-between shrink-0 sticky top-0 h-screen">
-        
+
         {/* Top Section */}
         <div className="space-y-4">
-          
-          {/* Brand Header */}
-          <Link href="/dashboard" className="flex items-center gap-2.5 px-2 py-1.5 rounded-xl hover:bg-ujlog-cream transition-colors">
-            <div className="flex items-center gap-1.5 p-1 bg-ujlog-cream rounded-xl border border-ujlog-border shrink-0">
-              <div className="relative w-6 h-6 bg-white rounded-md p-0.5 shadow-2xs">
-                <Image 
-                  src="/logo-ujlog.png" 
-                  alt="Logo UJLOG" 
-                  fill
-                  className="object-contain"
-                  referrerPolicy="no-referrer"
-                />
-              </div>
-              <div className="relative w-6 h-6 bg-white rounded-md p-0.5 shadow-2xs">
-                <Image 
-                  src="/logo-geographie.jpg" 
-                  alt="Logo Département Géographie" 
-                  fill
-                  className="object-contain rounded-sm"
-                  referrerPolicy="no-referrer"
-                />
-              </div>
+
+          {/* Brand Header — logo unique, mis en valeur */}
+          <Link href="/dashboard" className="flex items-center gap-3 px-2 py-2 rounded-xl hover:bg-ujlog-cream transition-colors">
+            <div className="relative w-11 h-11 bg-white rounded-2xl p-1.5 shadow-soft-warm border border-ujlog-border shrink-0">
+              <Image
+                src="/logo-geographie.jpg"
+                alt="Logo Département de Géographie"
+                fill
+                className="object-contain rounded-xl"
+                referrerPolicy="no-referrer"
+              />
             </div>
             <div className="flex flex-col min-w-0">
-              <span className="font-extrabold text-xs tracking-tight text-ujlog-primary-dark uppercase truncate">
-                UJLOG ÉTUDIANT
+              <span className="font-display font-bold text-sm tracking-tight text-ujlog-ink truncate">
+                UJLOG Étudiant
               </span>
-              <span className="text-[9px] font-bold text-green-700 uppercase tracking-wider truncate">
+              <span className="text-[9px] font-bold text-ujlog-secondary uppercase tracking-wider truncate">
                 Dép. Géographie
               </span>
             </div>
@@ -108,7 +112,7 @@ export function DashboardNavigation() {
 
           {/* Navigation Links */}
           <nav className="space-y-1">
-            {navItems.map((item) => {
+            {sidebarNavItems.map((item) => {
               const Icon = item.icon;
               const isActive = pathname === item.href || (item.href !== '/dashboard' && pathname?.startsWith(item.href));
 
@@ -229,89 +233,102 @@ export function DashboardNavigation() {
 
       </aside>
 
-      {/* Mobile & Tablet Top App Bar */}
-      <header className="lg:hidden sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-ujlog-border px-3.5 sm:px-4 py-2.5 flex items-center justify-between shadow-2xs">
-        <Link href="/dashboard" className="flex items-center gap-2 min-h-[44px]">
-          <div className="flex items-center gap-1 p-1 bg-ujlog-cream rounded-xl border border-ujlog-border shrink-0">
-            <div className="relative w-5 h-5 bg-white rounded p-0.5 shadow-2xs">
-              <Image src="/logo-ujlog.png" alt="Logo" fill className="object-contain" referrerPolicy="no-referrer" />
-            </div>
-            <div className="relative w-5 h-5 bg-white rounded p-0.5 shadow-2xs">
-              <Image src="/logo-geographie.jpg" alt="Logo Géo" fill className="object-contain rounded-xs" referrerPolicy="no-referrer" />
-            </div>
+      {/* Mobile & Tablet Top App Bar — logo unique et mis en valeur, plus d'icône profil/déconnexion ici */}
+      <header className="lg:hidden sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-ujlog-border px-4 py-3 flex items-center justify-between shadow-2xs">
+        <Link href="/dashboard" className="flex items-center gap-2.5 min-h-[44px]">
+          <div className="relative w-10 h-10 bg-white rounded-2xl p-1.5 shadow-soft-warm border border-ujlog-border shrink-0">
+            <Image src="/logo-geographie.jpg" alt="Logo Département de Géographie" fill className="object-contain rounded-xl" referrerPolicy="no-referrer" />
           </div>
           <div className="flex flex-col">
-            <span className="font-extrabold text-xs text-ujlog-primary-dark uppercase tracking-tight leading-tight">UJLOG ÉTUDIANT</span>
-            <span className="text-[9px] font-bold text-green-700 uppercase tracking-wider leading-none">Dép. Géographie</span>
+            <span className="font-display font-bold text-sm text-ujlog-ink tracking-tight leading-tight">UJLOG Étudiant</span>
+            <span className="text-[9px] font-bold text-ujlog-secondary uppercase tracking-wider leading-none">Dép. Géographie</span>
           </div>
         </Link>
-
-        <div className="flex items-center gap-1.5">
-          <button
-            type="button"
-            onClick={() => setIsContactModalOpen(true)}
-            className="p-2 bg-orange-50 text-ujlog-primary-dark rounded-xl border border-orange-200 text-xs font-bold flex items-center gap-1 cursor-pointer"
-            title="Contacter le service client"
-          >
-            <Headphones className="w-4 h-4" />
-          </button>
-
-          <Link
-            href="/dashboard/archives"
-            className="p-2 bg-green-50 text-green-900 rounded-xl border border-green-200 text-xs font-bold flex items-center gap-1 cursor-pointer"
-            title="Espace Archives"
-          >
-            <Archive className="w-4 h-4 text-green-800" />
-          </Link>
-
-          <Link 
-            href="/dashboard/profil" 
-            className="flex items-center gap-1.5 p-1 sm:px-2 rounded-xl bg-ujlog-cream hover:bg-orange-50 transition-colors min-h-[38px]"
-          >
-            <div className="relative w-6 h-6 rounded-lg bg-orange-100 text-ujlog-primary-dark flex items-center justify-center font-bold text-[10px] overflow-hidden shrink-0">
-              {user.avatarUrl ? (
-                <Image src={user.avatarUrl} alt="Avatar" fill className="object-cover" />
-              ) : (
-                <span>{(user.firstName?.[0] || 'E')}</span>
-              )}
-            </div>
-          </Link>
-          <button 
-            onClick={logout}
-            className="w-9 h-9 flex items-center justify-center text-ujlog-ink-soft/60 hover:text-red-600 rounded-xl hover:bg-red-50 transition-colors cursor-pointer"
-            aria-label="Déconnexion"
-            title="Se déconnecter"
-          >
-            <LogOut className="w-4 h-4" />
-          </button>
-        </div>
       </header>
 
-      {/* Mobile & Tablet Bottom Navigation Bar (PWA optimized, floating pill style) */}
-      <nav className="lg:hidden fixed bottom-2 left-2 right-2 z-50 bg-white/95 backdrop-blur-md border border-ujlog-border rounded-3xl px-1 py-1.5 pb-[calc(0.4rem+env(safe-area-inset-bottom))] flex items-center justify-around shadow-soft-warm">
-        {navItems.map((item) => {
-          const Icon = item.icon;
-          const isActive = pathname === item.href || (item.href !== '/dashboard' && pathname?.startsWith(item.href));
+      {/* Mobile & Tablet Bottom Navigation — 4 raccourcis directs + tiroir "Plus" */}
+      <nav className="lg:hidden fixed bottom-2 left-2 right-2 z-50">
+        {isMoreOpen && (
+          <div className="mb-2 bg-white border border-ujlog-border rounded-2xl shadow-soft-warm overflow-hidden">
+            {moreItems.map((item) => {
+              const Icon = item.icon;
+              const isActive = item.href !== '#support' && pathname?.startsWith(item.href);
+              const content = (
+                <>
+                  <Icon className={`w-4 h-4 ${isActive ? 'text-ujlog-primary-dark' : 'text-ujlog-ink-soft/70'}`} />
+                  <span>{item.label}</span>
+                </>
+              );
+              const className = `w-full flex items-center gap-3 px-4 py-3 text-xs font-bold border-b border-ujlog-border last:border-b-0 transition-colors ${
+                isActive ? 'text-ujlog-primary-dark bg-orange-50' : 'text-ujlog-ink hover:bg-ujlog-cream'
+              }`;
 
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={`flex flex-col items-center justify-center min-w-[48px] min-h-[44px] py-1 px-1 rounded-2xl transition-all ${
-                isActive 
-                  ? 'text-ujlog-primary-dark font-bold' 
-                  : 'text-ujlog-ink-soft/60 hover:text-ujlog-ink-soft'
-              }`}
+              if (item.action) {
+                return (
+                  <button key={item.label} type="button" onClick={() => { item.action(); setIsMoreOpen(false); }} className={className}>
+                    {content}
+                  </button>
+                );
+              }
+              return (
+                <Link key={item.label} href={item.href} onClick={() => setIsMoreOpen(false)} className={className}>
+                  {content}
+                </Link>
+              );
+            })}
+            <button
+              type="button"
+              onClick={() => { logout(); setIsMoreOpen(false); }}
+              className="w-full flex items-center gap-3 px-4 py-3 text-xs font-bold text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
             >
-              <div className={`flex items-center justify-center w-7 h-7 rounded-xl transition-all ${isActive ? 'bg-terracotta-gradient shadow-glow-orange' : ''}`}>
-                <Icon className={`w-4 h-4 ${isActive ? 'text-white stroke-[2.5]' : 'text-ujlog-ink-soft/50'}`} />
-              </div>
-              <span className="text-[8.5px] mt-0.5 tracking-tight truncate max-w-[56px]">
-                {item.label}
-              </span>
-            </Link>
-          );
-        })}
+              <LogOut className="w-4 h-4" />
+              <span>Déconnexion</span>
+            </button>
+          </div>
+        )}
+
+        <div className="bg-white/95 backdrop-blur-md border border-ujlog-border rounded-3xl px-1 py-1.5 pb-[calc(0.4rem+env(safe-area-inset-bottom))] flex items-center justify-around shadow-soft-warm">
+          {navItems.map((item) => {
+            const Icon = item.icon;
+            const isActive = pathname === item.href || (item.href !== '/dashboard' && pathname?.startsWith(item.href));
+
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={`flex flex-col items-center justify-center min-w-[48px] min-h-[44px] py-1 px-1 rounded-2xl transition-all ${
+                  isActive
+                    ? 'text-ujlog-primary-dark font-bold'
+                    : 'text-ujlog-ink-soft/60 hover:text-ujlog-ink-soft'
+                }`}
+              >
+                <div className={`flex items-center justify-center w-7 h-7 rounded-xl transition-all ${isActive ? 'bg-terracotta-gradient shadow-glow-orange' : ''}`}>
+                  <Icon className={`w-4 h-4 ${isActive ? 'text-white' : 'text-ujlog-ink-soft/50'}`} strokeWidth={2} />
+                </div>
+                <span className="text-[8.5px] mt-0.5 tracking-tight truncate max-w-[56px]">
+                  {item.label}
+                </span>
+              </Link>
+            );
+          })}
+
+          <button
+            type="button"
+            onClick={() => setIsMoreOpen((v) => !v)}
+            className={`flex flex-col items-center justify-center min-w-[48px] min-h-[44px] py-1 px-1 rounded-2xl transition-all cursor-pointer ${
+              isMoreOpen || isMoreActive ? 'text-ujlog-primary-dark font-bold' : 'text-ujlog-ink-soft/60 hover:text-ujlog-ink-soft'
+            }`}
+          >
+            <div className={`flex items-center justify-center w-7 h-7 rounded-xl transition-all ${isMoreOpen || isMoreActive ? 'bg-terracotta-gradient shadow-glow-orange' : ''}`}>
+              {isMoreOpen ? (
+                <X className={`w-4 h-4 ${isMoreOpen ? 'text-white' : ''}`} strokeWidth={2} />
+              ) : (
+                <MoreHorizontal className={`w-4 h-4 ${isMoreActive ? 'text-white' : 'text-ujlog-ink-soft/50'}`} strokeWidth={2} />
+              )}
+            </div>
+            <span className="text-[8.5px] mt-0.5 tracking-tight">Plus</span>
+          </button>
+        </div>
       </nav>
     </>
   );

@@ -93,20 +93,17 @@ export default function SuperAdminLoginPage() {
         >
           {/* Header */}
           <div className="text-center space-y-2.5">
-            <div className="flex items-center justify-center gap-2 mb-1">
-              <div className="relative w-11 h-11 bg-ujlog-cream rounded-2xl p-1 border border-ujlog-border shadow-2xs">
-                <Image src="/logo-ujlog.png" alt="Logo UJLOG" fill className="object-contain" referrerPolicy="no-referrer" />
-              </div>
-              <div className="relative w-11 h-11 bg-ujlog-cream rounded-2xl p-1 border border-ujlog-border shadow-2xs">
-                <Image src="/logo-geographie.jpg" alt="Logo Département Géographie" fill className="object-contain rounded-xl" referrerPolicy="no-referrer" />
+            <div className="flex items-center justify-center mb-1">
+              <div className="relative w-16 h-16 bg-white rounded-2xl p-2.5 border border-ujlog-border shadow-soft-warm">
+                <Image src="/logo-geographie.jpg" alt="Logo Département de Géographie" fill className="object-contain rounded-xl" referrerPolicy="no-referrer" />
               </div>
             </div>
             <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-orange-100/90 text-ujlog-primary-dark rounded-full text-[10px] font-black uppercase tracking-widest border border-orange-300">
               <ShieldCheck className="w-3.5 h-3.5 text-ujlog-primary-dark" />
               <span>UJLOG • Administration Centrale</span>
             </div>
-            <h1 className="text-xl font-black text-ujlog-ink tracking-tight uppercase">
-              SUPER ADMINISTRATEUR
+            <h1 className="font-display text-xl font-bold text-ujlog-ink tracking-tight">
+              Espace Super Administrateur
             </h1>
             <p className="text-xs text-ujlog-ink-soft max-w-xs mx-auto leading-relaxed">
               Console de gestion globale et d&apos;administration de la plateforme universitaire.

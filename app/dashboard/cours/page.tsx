@@ -237,7 +237,7 @@ function CoursesContent() {
           </div>
 
           <div className="max-w-md space-y-1">
-            <h2 className="text-sm sm:text-base font-bold text-ujlog-ink tracking-tight">
+            <h2 className="font-display text-sm sm:text-base font-bold text-ujlog-ink tracking-tight">
               Aucun document n&apos;est disponible, veuillez choisir votre niveau.
             </h2>
             <p className="text-xs text-ujlog-ink-soft font-normal leading-relaxed">
@@ -302,7 +302,7 @@ function CoursesContent() {
               </span>
             )}
           </div>
-          <h1 className="text-base sm:text-lg font-bold text-ujlog-ink tracking-tight mt-1">
+          <h1 className="font-display text-lg sm:text-xl font-bold text-ujlog-ink tracking-tight mt-1">
             Ressources Académiques
           </h1>
           <p className="text-ujlog-ink-soft font-normal text-xs mt-0.5">
@@ -311,45 +311,44 @@ function CoursesContent() {
         </div>
 
         {/* Quick Stats Summary */}
-        <div className="flex flex-wrap items-center gap-2 bg-white p-2 rounded-xl border border-ujlog-border shadow-2xs self-start sm:self-center">
-          <div className="text-center px-2 py-0.5">
-            <span className="block text-xs sm:text-sm font-bold text-ujlog-primary-dark">{cmCount}</span>
-            <span className="text-[8px] sm:text-[9px] font-bold text-ujlog-ink-soft/60 uppercase tracking-wider">CM</span>
+        <div className="flex items-stretch gap-2 self-start sm:self-center">
+          <div className="flex flex-col items-center justify-center px-4 py-2 rounded-2xl bg-terracotta-gradient text-white shadow-glow-orange min-w-[76px]">
+            <span className="font-display text-xl font-bold leading-none">{filteredCourses.length}</span>
+            <span className="text-[8px] font-bold uppercase tracking-wider mt-1 opacity-90">
+              {filteredCourses.length <= 1 ? 'Document' : 'Documents'}
+            </span>
           </div>
-          <div className="h-4 w-px bg-ujlog-border" />
-          <div className="text-center px-2 py-0.5">
-            <span className="block text-xs sm:text-sm font-bold text-green-700">{tdCount}</span>
-            <span className="text-[8px] sm:text-[9px] font-bold text-ujlog-ink-soft/60 uppercase tracking-wider">TD</span>
-          </div>
-          <div className="h-4 w-px bg-ujlog-border" />
-          <div className="text-center px-2 py-0.5">
-            <span className="block text-xs sm:text-sm font-bold text-indigo-700">{tdResultsCount}</span>
-            <span className="text-[8px] sm:text-[9px] font-bold text-ujlog-ink-soft/60 uppercase tracking-wider">Rés. TD</span>
-          </div>
-          <div className="h-4 w-px bg-ujlog-border" />
-          <div className="text-center px-2 py-0.5">
-            <span className="block text-xs sm:text-sm font-bold text-purple-700">{examResultsCount}</span>
-            <span className="text-[8px] sm:text-[9px] font-bold text-ujlog-ink-soft/60 uppercase tracking-wider">Rés. Exam</span>
-          </div>
-          <div className="h-4 w-px bg-ujlog-border" />
-          <div className="text-center px-2 py-0.5">
-            <span className="block text-xs sm:text-sm font-bold text-blue-700">{examSubjectsCount}</span>
-            <span className="text-[8px] sm:text-[9px] font-bold text-ujlog-ink-soft/60 uppercase tracking-wider">Sujets</span>
+          <div className="flex flex-wrap items-center gap-2 bg-white p-2 rounded-2xl border border-ujlog-border shadow-2xs">
+            <div className="text-center px-2 py-0.5">
+              <span className="block text-xs sm:text-sm font-bold text-ujlog-primary-dark">{cmCount}</span>
+              <span className="text-[8px] sm:text-[9px] font-bold text-ujlog-ink-soft/60 uppercase tracking-wider">CM</span>
+            </div>
+            <div className="h-4 w-px bg-ujlog-border" />
+            <div className="text-center px-2 py-0.5">
+              <span className="block text-xs sm:text-sm font-bold text-green-700">{tdCount}</span>
+              <span className="text-[8px] sm:text-[9px] font-bold text-ujlog-ink-soft/60 uppercase tracking-wider">TD</span>
+            </div>
+            <div className="h-4 w-px bg-ujlog-border" />
+            <div className="text-center px-2 py-0.5">
+              <span className="block text-xs sm:text-sm font-bold text-indigo-700">{tdResultsCount}</span>
+              <span className="text-[8px] sm:text-[9px] font-bold text-ujlog-ink-soft/60 uppercase tracking-wider">Rés. TD</span>
+            </div>
+            <div className="h-4 w-px bg-ujlog-border" />
+            <div className="text-center px-2 py-0.5">
+              <span className="block text-xs sm:text-sm font-bold text-purple-700">{examResultsCount}</span>
+              <span className="text-[8px] sm:text-[9px] font-bold text-ujlog-ink-soft/60 uppercase tracking-wider">Rés. Exam</span>
+            </div>
+            <div className="h-4 w-px bg-ujlog-border" />
+            <div className="text-center px-2 py-0.5">
+              <span className="block text-xs sm:text-sm font-bold text-blue-700">{examSubjectsCount}</span>
+              <span className="text-[8px] sm:text-[9px] font-bold text-ujlog-ink-soft/60 uppercase tracking-wider">Sujets</span>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Dynamic Resource Count Badge & Active Filters Info */}
-      <div className="flex flex-wrap items-center justify-between gap-2 bg-white px-3.5 py-2.5 rounded-xl border border-ujlog-border shadow-2xs text-xs">
-        <div className="flex items-center gap-2">
-          <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-orange-50 text-ujlog-primary-dark border border-orange-200 text-[11px] font-semibold">
-            <span className="w-1.5 h-1.5 rounded-full bg-orange-600 animate-pulse" />
-            <span>Nombre de ressources :</span>
-            <span className="font-bold text-ujlog-primary-dark bg-orange-200/70 px-1.5 py-0.2 rounded-full text-[10px]">
-              {filteredCourses.length} {filteredCourses.length <= 1 ? 'document' : 'documents'}
-            </span>
-          </div>
-        </div>
+      {/* Active Filters Info */}
+      <div className="flex flex-wrap items-center justify-end gap-2 text-xs">
         <div className="text-[11px] text-ujlog-ink-soft font-medium">
           Semestre {activeTab} • Niveau {niveauId} {parcoursId ? `(${parcoursId})` : ''}
         </div>

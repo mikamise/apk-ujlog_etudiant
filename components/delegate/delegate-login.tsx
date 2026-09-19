@@ -82,12 +82,9 @@ export function DelegateLogin({ onSwitchToActivation, onLoginSuccess }: Delegate
       >
         {/* Header */}
         <div className="text-center space-y-2">
-          <div className="flex items-center justify-center gap-2 mb-1">
-            <div className="relative w-10 h-10 bg-ujlog-cream rounded-xl p-1 border border-ujlog-border shadow-2xs">
-              <Image src="/logo-ujlog.png" alt="Logo UJLOG" fill className="object-contain" referrerPolicy="no-referrer" />
-            </div>
-            <div className="relative w-10 h-10 bg-ujlog-cream rounded-xl p-1 border border-ujlog-border shadow-2xs">
-              <Image src="/logo-geographie.jpg" alt="Logo Département Géographie" fill className="object-contain rounded-lg" referrerPolicy="no-referrer" />
+          <div className="flex items-center justify-center mb-1">
+            <div className="relative w-14 h-14 bg-white rounded-2xl p-2 border border-ujlog-border shadow-soft-warm">
+              <Image src="/logo-geographie.jpg" alt="Logo Département de Géographie" fill className="object-contain rounded-xl" referrerPolicy="no-referrer" />
             </div>
           </div>
           <div className="w-11 h-11 rounded-2xl bg-terracotta-gradient text-white flex items-center justify-center mx-auto shadow-glow-orange">
@@ -97,7 +94,7 @@ export function DelegateLogin({ onSwitchToActivation, onLoginSuccess }: Delegate
             <span className="text-[10px] uppercase font-extrabold text-green-700 tracking-wider block">
               Accès Réservé
             </span>
-            <h1 className="text-lg sm:text-xl font-extrabold text-ujlog-primary-dark tracking-tight">
+            <h1 className="font-display text-lg sm:text-xl font-bold text-ujlog-primary-dark tracking-tight">
               Espace Délégué
             </h1>
           </div>

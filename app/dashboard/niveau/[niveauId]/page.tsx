@@ -85,17 +85,25 @@ export default function NiveauParcoursPage() {
             <span>Tableau de bord</span>
           </Link>
           
-          <div className="flex items-center gap-2.5">
-            <div className="w-7 h-7 rounded-xl bg-orange-50 border border-orange-200 text-ujlog-primary-dark flex items-center justify-center font-bold text-xs">
-              <GraduationCap className="w-3.5 h-3.5" />
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5">
+              <div className="w-7 h-7 rounded-xl bg-orange-50 border border-orange-200 text-ujlog-primary-dark flex items-center justify-center font-bold text-xs">
+                <GraduationCap className="w-3.5 h-3.5" />
+              </div>
+              <div>
+                <h1 className="font-display text-lg sm:text-xl font-bold text-ujlog-ink tracking-tight">
+                  {data.name}
+                </h1>
+                <p className="text-ujlog-ink-soft font-normal text-xs mt-0.5">
+                  {data.desc}. Sélectionnez votre parcours pour consulter les cours.
+                </p>
+              </div>
             </div>
-            <div>
-              <h1 className="text-base sm:text-lg font-bold text-ujlog-ink tracking-tight">
-                {data.name}
-              </h1>
-              <p className="text-ujlog-ink-soft font-normal text-xs mt-0.5">
-                {data.desc}. Sélectionnez votre parcours pour consulter les cours.
-              </p>
+            <div className="flex flex-col items-center justify-center px-3.5 py-1.5 rounded-2xl bg-terracotta-gradient text-white shadow-glow-orange shrink-0">
+              <span className="font-display text-base font-bold leading-none">{data.parcours.length}</span>
+              <span className="text-[7px] font-bold uppercase tracking-wider mt-0.5 opacity-90">
+                {data.parcours.length <= 1 ? 'Filière' : 'Filières'}
+              </span>
             </div>
           </div>
         </motion.div>
@@ -115,7 +123,7 @@ export default function NiveauParcoursPage() {
                   <span className="text-[10px] font-bold text-ujlog-primary-dark bg-orange-50 px-1.5 py-0.5 rounded border border-orange-200 uppercase tracking-wider block w-fit mb-0.5">
                     {p.code}
                   </span>
-                  <h3 className="font-bold text-xs sm:text-sm text-ujlog-ink group-hover:text-ujlog-primary-dark transition-colors leading-snug">
+                  <h3 className="font-display text-xs sm:text-sm font-bold text-ujlog-ink group-hover:text-ujlog-primary-dark transition-colors leading-snug">
                     {p.name}
                   </h3>
                 </div>

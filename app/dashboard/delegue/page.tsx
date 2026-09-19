@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Image from 'next/image';
 import { DelegateStore } from '@/lib/delegate-store';
 import { DelegateLogin } from '@/components/delegate/delegate-login';
 import { DelegateActivation } from '@/components/delegate/delegate-activation';
@@ -88,9 +89,14 @@ export default function DelegatePage() {
       >
         <div className="absolute -right-12 -top-12 w-64 h-64 bg-green-400/25 rounded-full blur-3xl pointer-events-none" />
         <div className="relative z-10 space-y-2">
-          <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/14 backdrop-blur-md rounded-full border border-white/25 text-[10px] font-bold text-orange-50 uppercase tracking-widest">
-            <Sparkles className="w-3 h-3 text-green-200" />
-            <span>Portail d&apos;Administration</span>
+          <div className="flex items-center gap-2.5">
+            <div className="relative w-9 h-9 bg-white rounded-xl p-1.5 shadow-lg shrink-0">
+              <Image src="/logo-geographie.jpg" alt="Logo Département de Géographie" fill className="object-contain rounded-lg" referrerPolicy="no-referrer" />
+            </div>
+            <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/14 backdrop-blur-md rounded-full border border-white/25 text-[10px] font-bold text-orange-50 uppercase tracking-widest">
+              <Sparkles className="w-3 h-3 text-green-200" />
+              <span>Portail d&apos;Administration</span>
+            </div>
           </div>
           <h1 className="font-display text-xl sm:text-2xl font-bold text-orange-50 tracking-tight">
             Espaces de Gestion

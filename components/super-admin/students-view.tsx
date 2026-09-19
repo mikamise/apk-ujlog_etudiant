@@ -88,10 +88,13 @@ export function StudentsView({
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
-          <span className="text-xs font-bold text-ujlog-secondary bg-ujlog-secondary-50 border border-ujlog-secondary-100 px-3 py-1.5 rounded-xl">
-            {filteredStudents.length} / {students.length}
-          </span>
+        <div className="flex items-stretch gap-2">
+          <div className="flex flex-col items-center justify-center px-4 py-2 rounded-2xl bg-green-gradient text-white shadow-glow-green min-w-[76px]">
+            <span className="font-display text-xl font-bold leading-none">{filteredStudents.length}</span>
+            <span className="text-[8px] font-bold uppercase tracking-wider mt-1 opacity-90">
+              sur {students.length}
+            </span>
+          </div>
         </div>
       </div>
 
@@ -279,7 +282,7 @@ export function StudentsView({
                     <User className="w-5 h-5" />
                   </div>
                   <div>
-                    <h3 className="text-sm font-black text-ujlog-ink uppercase tracking-wider">FICHE ÉTUDIANT</h3>
+                    <h3 className="font-display text-sm font-bold text-ujlog-ink">Fiche étudiant</h3>
                     <p className="text-[10px] font-mono text-ujlog-secondary">{selectedStudent.studentId}</p>
                   </div>
                 </div>
@@ -346,8 +349,9 @@ export function StudentsView({
                       </button>
                     ) : (
                       <div className="space-y-2.5 bg-ujlog-cream/70 border border-ujlog-border rounded-2xl p-3">
-                        <p className="text-[10px] text-ujlog-ink-soft leading-relaxed">
-                          ⚠️ Effet immédiat : l&apos;étudiant perdra l&apos;accès aux cours de son niveau/filière actuel et recevra ceux du nouveau, comme s&apos;il venait de s&apos;y inscrire.
+                        <p className="text-[10px] text-ujlog-ink-soft leading-relaxed flex items-start gap-1.5">
+                          <AlertTriangle className="w-3 h-3 text-amber-600 shrink-0 mt-0.5" />
+                          <span>Effet immédiat : l&apos;étudiant perdra l&apos;accès aux cours de son niveau/filière actuel et recevra ceux du nouveau, comme s&apos;il venait de s&apos;y inscrire.</span>
                         </p>
                         <div className="grid grid-cols-2 gap-2">
                           <select

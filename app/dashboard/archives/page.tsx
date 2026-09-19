@@ -297,10 +297,12 @@ export default function StudentArchivesPage() {
       {/* ARCHIVED LIST RESULTS */}
       <div className="bg-white rounded-3xl p-5 sm:p-6 border border-ujlog-border/90 shadow-2xs space-y-4">
         <div className="flex items-center justify-between pb-3 border-b border-ujlog-border">
-          <div className="flex items-center gap-2">
-            <Archive className="w-4 h-4 text-green-700" />
-            <h2 className="text-sm font-extrabold text-ujlog-ink">
-              Documents archivés  -  Session {selectedYear} ({filteredCourses.length})
+          <div className="flex items-center gap-2.5">
+            <div className="flex flex-col items-center justify-center px-3 py-1.5 rounded-xl bg-green-gradient text-white shadow-glow-green min-w-[46px]">
+              <span className="font-display text-sm font-bold leading-none">{filteredCourses.length}</span>
+            </div>
+            <h2 className="font-display text-sm sm:text-base font-bold text-ujlog-ink">
+              Documents archivés — Session {selectedYear}
             </h2>
           </div>
           <span className="text-[10px] font-bold text-green-800 bg-green-50 border border-green-200 px-2.5 py-1 rounded-full">

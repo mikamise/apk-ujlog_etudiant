@@ -62,7 +62,7 @@ export function SettingsView() {
             <div className="p-3 bg-ujlog-cream rounded-2xl border border-ujlog-border space-y-1">
               <span className="font-bold text-ujlog-primary text-xs block">Département de Géographie</span>
               <p className="text-[11px] text-ujlog-ink-soft/60">
-                UFR des Sciences Sociales  -  Université Jean Lorougnon Guédé (UJLOG), Daloa.
+                UFR des Sciences Sociales — Département de Géographie (UJLOG), Daloa.
               </p>
             </div>
           </div>

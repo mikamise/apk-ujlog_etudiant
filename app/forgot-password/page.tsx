@@ -4,7 +4,7 @@ import { Suspense, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
-import { ArrowLeft, CheckCircle } from 'lucide-react';
+import { ArrowLeft, CheckCircle, Mail, KeyRound } from 'lucide-react';
 
 function ForgotPasswordContent() {
   const searchParams = useSearchParams();
@@ -44,85 +44,150 @@ function ForgotPasswordContent() {
     }
   };
 
-  if (success) {
-    return (
-      <div className="min-h-screen bg-ujlog-cream flex flex-col items-center justify-center p-4">
-        <div className="bg-white w-full max-w-md rounded-3xl shadow-soft-warm border border-ujlog-border p-8 text-center flex flex-col items-center">
-          <div className="w-14 h-14 bg-ujlog-secondary-50 text-ujlog-secondary rounded-2xl flex items-center justify-center mb-5 border border-ujlog-secondary-100">
-            <CheckCircle className="w-6 h-6" />
-          </div>
-          <h1 className="font-display text-lg font-bold text-ujlog-ink mb-2">Instructions envoyées</h1>
-          <p className="text-xs text-ujlog-ink-soft leading-relaxed mb-6">
-            Si un compte est associé à cette adresse e-mail, vous recevrez un lien de réinitialisation d&apos;ici quelques minutes. Pensez à vérifier vos courriers indésirables.
-          </p>
-          <Link
-            href="/login"
-            className="w-full bg-ujlog-primary-dark text-white py-3 rounded-2xl font-bold text-sm hover:brightness-105 transition-all text-center block"
-          >
-            Retour à la connexion
-          </Link>
-        </div>
-      </div>
-    );
-  }
+  const step = success ? 2 : 1;
 
   return (
-    <div className="min-h-screen bg-ujlog-cream flex flex-col">
-      <header className="w-full bg-white border-b border-ujlog-border px-4 py-3 sm:px-8 sm:py-4 flex items-center justify-between">
-        <Link href="/login" className="flex items-center gap-2 text-ujlog-ink-soft hover:text-ujlog-primary-dark transition-colors group">
-          <div className="w-8 h-8 rounded-xl bg-ujlog-cream flex items-center justify-center group-hover:bg-ujlog-primary-light transition-colors">
-            <ArrowLeft className="w-4 h-4" />
-          </div>
-          <span className="text-xs font-bold uppercase tracking-wider hidden sm:block">Retour</span>
-        </Link>
-        <div className="flex items-center gap-2.5">
-          <div className="relative w-7 h-7 bg-white rounded-lg p-1 border border-ujlog-border">
-            <Image src="/logo-ujlog.png" alt="Logo UJLOG" fill className="object-contain" referrerPolicy="no-referrer" />
-          </div>
-          <span className="font-display font-bold text-ujlog-ink tracking-tight text-sm">UJLOG ÉTUDIANT</span>
-        </div>
-      </header>
+    <div className="min-h-screen bg-ujlog-cream flex items-center justify-center p-4 sm:p-8">
+      <div className="w-full max-w-3xl bg-white rounded-3xl shadow-soft-warm border border-ujlog-border overflow-hidden lg:grid lg:grid-cols-[280px_1fr]">
 
-      <main className="flex-1 flex items-center justify-center p-4">
-        <div className="bg-white w-full max-w-md rounded-3xl shadow-soft-warm border border-ujlog-border p-6 sm:p-8">
-          <div className="text-center mb-6">
-            <h1 className="font-display text-lg font-bold text-ujlog-ink mb-1.5">Mot de passe oublié ?</h1>
-            <p className="text-xs text-ujlog-ink-soft">
-              Entrez votre adresse e-mail afin de recevoir les instructions permettant de réinitialiser votre mot de passe.
-            </p>
+        {/* ===================== ASIDE / STEPPER (desktop uniquement) ===================== */}
+        <aside className="hidden lg:flex flex-col bg-ujlog-cream border-r border-ujlog-border p-9">
+          <div className="w-24 h-24 rounded-3xl bg-white p-3 shadow-xl border border-ujlog-border mb-8">
+            <div className="relative w-full h-full">
+              <Image src="/logo-geographie.jpg" alt="Logo Département de Géographie" fill className="object-contain rounded-2xl" referrerPolicy="no-referrer" />
+            </div>
           </div>
 
-          {error && (
-            <div className="mb-4 p-3 bg-red-50 text-red-700 rounded-xl text-xs font-medium border border-red-200/80">
-              {error}
+          <div className="flex flex-col">
+            {/* Étape 1 */}
+            <div className="flex items-start gap-3.5 relative">
+              <div className="absolute left-[15px] top-8 w-0.5 h-[calc(100%-0.5rem)] bg-ujlog-border" />
+              <div className={`shrink-0 w-8 h-8 rounded-full border-2 flex items-center justify-center text-xs font-bold z-10 ${
+                step >= 1 ? 'border-ujlog-primary bg-ujlog-primary text-white' : 'border-ujlog-border bg-white text-ujlog-ink-soft'
+              }`}>
+                {step > 1 ? <CheckCircle className="w-4 h-4" /> : '1'}
+              </div>
+              <div className="pt-1 pb-6">
+                <div className={`text-[13px] font-bold ${step === 1 ? 'text-ujlog-primary-dark' : 'text-ujlog-ink'}`}>Adresse email</div>
+                <div className="text-[11px] text-ujlog-ink-soft mt-0.5">Identifiez-vous</div>
+              </div>
+            </div>
+            {/* Étape 2 */}
+            <div className="flex items-start gap-3.5">
+              <div className={`shrink-0 w-8 h-8 rounded-full border-2 flex items-center justify-center text-xs font-bold z-10 ${
+                step === 2 ? 'border-ujlog-primary bg-ujlog-primary text-white' : 'border-ujlog-border bg-white text-ujlog-ink-soft'
+              }`}>
+                2
+              </div>
+              <div className="pt-1">
+                <div className={`text-[13px] font-bold ${step === 2 ? 'text-ujlog-primary-dark' : 'text-ujlog-ink'}`}>Confirmation</div>
+                <div className="text-[11px] text-ujlog-ink-soft mt-0.5">Vérifiez votre boîte</div>
+              </div>
+            </div>
+          </div>
+        </aside>
+
+        {/* ===================== MAIN ===================== */}
+        <div className="flex flex-col p-5 sm:p-9">
+
+          {/* Header mobile uniquement */}
+          <div className="lg:hidden flex items-center mb-5">
+            <Link href="/login" className="flex items-center gap-2 text-ujlog-ink-soft hover:text-ujlog-ink transition-colors group">
+              <div className="w-8 h-8 rounded-xl bg-ujlog-cream border border-ujlog-border flex items-center justify-center group-hover:border-ujlog-primary/40 transition-colors">
+                <ArrowLeft className="w-3.5 h-3.5" />
+              </div>
+              <span className="text-xs font-bold uppercase tracking-wider">Retour</span>
+            </Link>
+            {/* Indicateur d'étape compact */}
+            <div className="flex items-center gap-1.5 ml-auto">
+              <span className={`w-6 h-1.5 rounded-full ${step >= 1 ? 'bg-ujlog-primary' : 'bg-ujlog-border'}`} />
+              <span className={`w-6 h-1.5 rounded-full ${step === 2 ? 'bg-ujlog-primary' : 'bg-ujlog-border'}`} />
+            </div>
+          </div>
+
+          {!success ? (
+            <>
+              <span className="inline-flex items-center gap-1.5 bg-ujlog-primary-light text-ujlog-primary-dark text-xs font-bold px-3 py-1.5 rounded-xl mb-4 w-fit">
+                <KeyRound className="w-3.5 h-3.5" />
+                Réinitialisation
+              </span>
+              <h1 className="font-display text-2xl font-bold text-ujlog-ink mb-2">Mot de passe oublié&nbsp;?</h1>
+              <p className="text-sm text-ujlog-ink-soft leading-relaxed mb-7 max-w-md">
+                Entrez votre adresse email et nous vous enverrons un lien de réinitialisation sécurisé.
+              </p>
+
+              {error && (
+                <div className="mb-4 p-3 bg-red-50 text-red-700 rounded-xl text-xs font-medium border border-red-200/80">
+                  {error}
+                </div>
+              )}
+
+              <form onSubmit={handleSubmit} className="flex flex-col flex-1">
+                <div className="space-y-1.5 mb-4">
+                  <label className="text-[11px] font-bold text-ujlog-ink-soft uppercase tracking-wider block">
+                    Adresse email
+                  </label>
+                  <div className="relative">
+                    <Mail className="w-4 h-4 text-ujlog-ink-soft/60 absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    <input
+                      type="email"
+                      required
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="nom@exemple.com"
+                      className="w-full pl-11 pr-4 py-3 rounded-2xl border border-ujlog-border bg-white text-sm font-medium text-ujlog-ink placeholder:text-ujlog-ink-soft/60 focus:outline-none focus:ring-2 focus:ring-ujlog-primary/20 focus:border-ujlog-primary transition-all"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex gap-3 mt-auto pt-6">
+                  <Link
+                    href="/login"
+                    className="flex-1 py-3 rounded-2xl border-[1.5px] border-ujlog-border text-ujlog-ink-soft font-bold text-sm text-center hover:border-ujlog-primary hover:text-ujlog-primary-dark transition-colors"
+                  >
+                    Retour
+                  </Link>
+                  <button
+                    type="submit"
+                    disabled={isLoading}
+                    className="flex-1 py-3 rounded-2xl bg-ujlog-primary-dark text-white font-bold text-sm hover:brightness-105 transition-all disabled:opacity-70 cursor-pointer"
+                  >
+                    {isLoading ? 'Envoi…' : 'Envoyer le lien'}
+                  </button>
+                </div>
+              </form>
+            </>
+          ) : (
+            <div className="flex flex-col flex-1 items-center justify-center text-center py-6">
+              <div className="w-20 h-20 rounded-full bg-ujlog-primary-light flex items-center justify-center mb-6">
+                <CheckCircle className="w-9 h-9 text-ujlog-primary-dark" />
+              </div>
+              <h2 className="font-display text-xl font-bold text-ujlog-ink mb-2.5">Email envoyé&nbsp;!</h2>
+              <p className="text-sm text-ujlog-ink-soft leading-relaxed max-w-xs">
+                Si un compte est associé à cette adresse, un lien de réinitialisation a été envoyé à<br />
+                <strong className="text-ujlog-ink">{email}</strong>
+                <br /><br />
+                Vérifiez votre boîte de réception et vos spams.
+              </p>
+              <div className="flex gap-3 mt-8 w-full max-w-xs">
+                <button
+                  type="button"
+                  onClick={() => setSuccess(false)}
+                  className="flex-1 py-3 rounded-2xl border-[1.5px] border-ujlog-border text-ujlog-ink-soft font-bold text-sm hover:border-ujlog-primary hover:text-ujlog-primary-dark transition-colors"
+                >
+                  Modifier l&apos;email
+                </button>
+                <Link
+                  href="/login"
+                  className="flex-1 py-3 rounded-2xl bg-ujlog-primary-dark text-white font-bold text-sm text-center hover:brightness-105 transition-all"
+                >
+                  Connexion
+                </Link>
+              </div>
             </div>
           )}
-
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-1.5">
-              <label className="text-[11px] font-bold text-ujlog-ink-soft uppercase tracking-wider block">
-                Email
-              </label>
-              <input
-                type="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="Entrez votre email"
-                className="w-full px-4 py-3 rounded-2xl border border-ujlog-border bg-white text-sm font-medium text-ujlog-ink placeholder:text-ujlog-ink-soft/60 focus:outline-none focus:ring-2 focus:ring-ujlog-primary/20 focus:border-ujlog-primary transition-all"
-              />
-            </div>
-
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="w-full bg-ujlog-primary-dark text-white py-3.5 rounded-2xl font-bold text-sm hover:brightness-105 transition-all disabled:opacity-70 cursor-pointer mt-2"
-            >
-              {isLoading ? 'Envoi en cours...' : 'Envoyer les instructions'}
-            </button>
-          </form>
         </div>
-      </main>
+      </div>
     </div>
   );
 }

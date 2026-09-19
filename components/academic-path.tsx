@@ -46,7 +46,7 @@ export function AcademicPath() {
             <Sparkles className="w-3 h-3 text-green-600" />
             <span>Niveaux d&apos;Études Académiques</span>
           </span>
-          <h2 className="text-xl sm:text-2xl font-black text-ujlog-ink tracking-tight">
+          <h2 className="font-display text-xl sm:text-2xl font-bold text-ujlog-ink tracking-tight">
             Parcours de Formation LMD
           </h2>
           <p className="text-xs sm:text-sm text-ujlog-ink-soft font-normal leading-relaxed">
@@ -76,7 +76,7 @@ export function AcademicPath() {
                 </span>
               </div>
               <div>
-                <h3 className="text-sm font-black text-ujlog-ink tracking-tight">
+                <h3 className="font-display text-sm font-bold text-ujlog-ink tracking-tight">
                   {level.name}
                 </h3>
                 <p className="text-[11px] text-ujlog-ink-soft font-medium mt-0.5">

@@ -83,7 +83,7 @@ export function Hero() {
             <span className="w-2 h-2 rounded-full bg-green-300 animate-ping"></span>
             <span className="text-[10px] sm:text-[11px] font-black text-orange-50 uppercase tracking-widest flex items-center gap-1.5">
               <Landmark className="w-3.5 h-3.5 text-orange-100" />
-              <span>Université Jean Lorougnon Guédé • Daloa</span>
+              <span>Département de Géographie • Daloa</span>
             </span>
           </motion.div>
 
@@ -173,48 +173,12 @@ export function Hero() {
               </div>
             </div>
 
-            {/* THE 3 ANIMATED INSTITUTION CARDS */}
+            {/* THE 2 ANIMATED INSTITUTION CARDS */}
             <div className="space-y-3 pt-1">
-              
-              {/* CARD 1: Université Jean Lorougnon Guédé */}
+
+              {/* CARD 1: Département de Géographie */}
               <motion.div 
                 variants={floating1}
-                animate="animate"
-                whileHover={{ scale: 1.02 }}
-                className="bg-white/10 hover:bg-white/15 backdrop-blur-md p-3.5 rounded-2xl border border-white/20 shadow-lg flex items-center gap-3.5 transition-all cursor-default"
-              >
-                <div className="relative w-11 h-11 bg-white rounded-xl flex items-center justify-center shrink-0 shadow-md p-1 border border-orange-200">
-                  <div className="relative w-full h-full">
-                    <Image 
-                      src="/logo-ujlog.png" 
-                      alt="Logo UJLOG" 
-                      fill
-                      className="object-contain"
-                      referrerPolicy="no-referrer"
-                    />
-                  </div>
-                  {/* Glowing Pulse Ring */}
-                  <span className="absolute -top-1 -right-1 w-3 h-3 bg-orange-500 rounded-full ring-2 ring-white animate-pulse" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[9px] font-black text-white uppercase tracking-widest">
-                      Institution Publique
-                    </span>
-                    <span className="text-[9px] text-orange-200 font-bold">UJLOG</span>
-                  </div>
-                  <p className="text-xs font-black text-white truncate">
-                    Univ. Jean Lorougnon Guédé
-                  </p>
-                  <p className="text-[10px] text-orange-100/80 truncate">
-                    Excellence & Innovation Pédagogique
-                  </p>
-                </div>
-              </motion.div>
-
-              {/* CARD 2: Département de Géographie */}
-              <motion.div 
-                variants={floating2}
                 animate="animate"
                 whileHover={{ scale: 1.02 }}
                 className="bg-ujlog-primary backdrop-blur-md p-3.5 rounded-2xl border border-orange-400/40 shadow-xl flex items-center gap-3.5 transition-all cursor-default relative overflow-hidden"
@@ -250,7 +214,7 @@ export function Hero() {
                 </div>
               </motion.div>
 
-              {/* CARD 3: Espace Numérique & Session Active */}
+              {/* CARD 2: Espace Numérique & Session Active */}
               <motion.div 
                 variants={floating3}
                 animate="animate"

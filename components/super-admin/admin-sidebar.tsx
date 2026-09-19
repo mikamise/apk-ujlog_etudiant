@@ -65,20 +65,15 @@ export function AdminSidebar({
       {/* Brand Header */}
       <div className="p-4 border-b border-ujlog-border flex items-center justify-between bg-ujlog-cream/50">
         <div className="flex items-center gap-2.5">
-          <div className="flex items-center gap-1.5 p-1 bg-white rounded-xl border border-ujlog-border shadow-2xs">
-            <div className="relative w-6 h-6 bg-white rounded-md p-0.5">
-              <Image src="/logo-ujlog.png" alt="Logo UJLOG" fill className="object-contain" referrerPolicy="no-referrer" />
-            </div>
-            <div className="relative w-6 h-6 bg-white rounded-md p-0.5">
-              <Image src="/logo-geographie.jpg" alt="Logo Dép Géo" fill className="object-contain rounded-xs" referrerPolicy="no-referrer" />
-            </div>
+          <div className="relative w-10 h-10 bg-white rounded-2xl p-1.5 border border-ujlog-border shadow-soft-warm shrink-0">
+            <Image src="/logo-geographie.jpg" alt="Logo Département de Géographie" fill className="object-contain rounded-xl" referrerPolicy="no-referrer" />
           </div>
           <div className="flex flex-col">
-            <span className="text-xs font-black text-ujlog-ink tracking-wider uppercase">
-              CONSOLE UJLOG
+            <span className="font-display text-sm font-bold text-ujlog-ink tracking-tight">
+              Console UJLOG
             </span>
-            <span className="text-[10px] font-bold text-green-700 uppercase tracking-tight">
-              SUPER ADMIN
+            <span className="text-[9px] font-bold text-green-700 uppercase tracking-wider">
+              Super Admin
             </span>
           </div>
         </div>

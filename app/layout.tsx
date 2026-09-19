@@ -21,8 +21,8 @@ const manrope = Manrope({
 });
 
 export const metadata: Metadata = {
-  title: 'UJLOG Étudiants - Université Jean Lorougnon Guédé',
-  description: 'Portail universitaire officiel des cours, annales et ressources académiques de l\'Université Jean Lorougnon Guédé (Daloa).',
+  title: 'UJLOG Étudiants - Département de Géographie',
+  description: 'Portail universitaire officiel des cours, annales et ressources académiques du Département de Géographie de l\'Université Jean Lorougnon Guédé (Daloa).',
   manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
@@ -33,8 +33,8 @@ export const metadata: Metadata = {
     telephone: false,
   },
   icons: {
-    icon: '/LOGO-SITE.png',
-    apple: '/LOGO-SITE.png',
+    icon: '/icon-192.png',
+    apple: '/apple-touch-icon.png',
   },
 };
 

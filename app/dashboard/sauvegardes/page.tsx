@@ -126,7 +126,7 @@ export default function SauvegardesPage() {
             </div>
             <span>Tableau de bord</span>
           </Link>
-          <h1 className="text-base sm:text-lg font-bold text-ujlog-ink tracking-tight">
+          <h1 className="font-display text-lg sm:text-xl font-bold text-ujlog-ink tracking-tight">
             Mes documents sauvegardés
           </h1>
           <p className="text-ujlog-ink-soft font-normal text-xs mt-0.5">
@@ -134,9 +134,17 @@ export default function SauvegardesPage() {
           </p>
         </div>
 
-        <div className="bg-white px-3 py-1.5 rounded-xl border border-ujlog-border shadow-soft-warm self-start sm:self-auto text-xs font-semibold text-ujlog-ink-soft flex items-center gap-3">
-          <span><span className="text-ujlog-primary-dark font-bold">{savedList.length}</span> document(s) sauvegardé(s)</span>
-          <Link href="/dashboard/telechargements" className="text-ujlog-secondary-dark font-bold hover:underline">
+        <div className="flex items-stretch gap-2 self-start sm:self-auto">
+          <div className="flex flex-col items-center justify-center px-4 py-2 rounded-2xl bg-terracotta-gradient text-white shadow-glow-orange min-w-[76px]">
+            <span className="font-display text-xl font-bold leading-none">{savedList.length}</span>
+            <span className="text-[8px] font-bold uppercase tracking-wider mt-1 opacity-90">
+              {savedList.length <= 1 ? 'Sauvegarde' : 'Sauvegardes'}
+            </span>
+          </div>
+          <Link
+            href="/dashboard/telechargements"
+            className="flex items-center px-3.5 rounded-2xl border border-ujlog-border bg-white text-ujlog-secondary-dark font-bold text-xs hover:bg-ujlog-secondary-50 transition-colors"
+          >
             Mes téléchargements →
           </Link>
         </div>
@@ -151,7 +159,7 @@ export default function SauvegardesPage() {
           <div className="w-10 h-10 bg-orange-50 border border-orange-200/80 rounded-xl flex items-center justify-center text-ujlog-primary-dark shadow-2xs">
             <Bookmark className="w-5 h-5" />
           </div>
-          <h2 className="text-xs sm:text-sm font-bold text-ujlog-ink tracking-tight">
+          <h2 className="font-display text-xs sm:text-sm font-bold text-ujlog-ink tracking-tight">
             Aucun document sauvegardé
           </h2>
           <p className="text-ujlog-ink-soft font-normal text-xs leading-relaxed max-w-xs">

@@ -37,27 +37,34 @@ async function send(payload: { to: string; subject: string; html: string }) {
 const FROM = process.env.RESEND_FROM_EMAIL || 'UJLOG Étudiant <onboarding@resend.dev>';
 
 function wrapper(title: string, bodyHtml: string, ctaLabel?: string, ctaUrl?: string) {
+  const rawBase =
+    process.env.NEXT_PUBLIC_APP_URL || process.env.URL || process.env.VERCEL_PROJECT_PRODUCTION_URL || '';
+  const base = rawBase.replace(/\/+$/, '');
+  const logoSrc = base && !/votre-|your-|example\.(com|org)|localhost/i.test(base)
+    ? `${base.startsWith('http') ? base : `https://${base}`}/logo-geographie.jpg`
+    : null;
+
   return `
-  <div style="font-family: 'Manrope', Arial, sans-serif; background:#fff8f1; padding:32px 16px;">
-    <div style="max-width:480px;margin:0 auto;background:#fffdf9;border-radius:24px;overflow:hidden;border:1px solid #fde4cc;">
-      <div style="background:linear-gradient(135deg,#ea580c,#c2410c,#7c2d12);padding:28px 24px;">
-        <p style="margin:0;color:#fff7ed;font-weight:800;font-size:13px;letter-spacing:0.06em;">UJLOG ÉTUDIANT</p>
-        <p style="margin:6px 0 0;color:#fff7ed;font-size:10px;letter-spacing:0.04em;opacity:0.85;">Université Jean Lorougnon Guédé — Département de Géographie</p>
-      </div>
-      <div style="padding:28px 24px;">
-        <h1 style="margin:0 0 12px;font-size:17px;color:#2b1608;">${esc(title)}</h1>
-        <div style="font-size:13px;line-height:1.6;color:#92703f;">${bodyHtml}</div>
-        ${
-          ctaUrl
-            ? `<div style="margin-top:24px;">
-                <a href="${esc(ctaUrl)}" style="display:inline-block;background:linear-gradient(135deg,#ea580c,#c2410c);color:#fff7ed;text-decoration:none;font-weight:800;font-size:13px;padding:12px 24px;border-radius:14px;">${esc(ctaLabel)}</a>
-              </div>`
-            : ''
-        }
-      </div>
-      <div style="padding:16px 24px;border-top:1px solid #fde4cc;">
-        <p style="margin:0;font-size:10px;color:#92703f;opacity:0.7;">Si vous n'êtes pas à l'origine de cette action, ignorez simplement cet e-mail.</p>
-      </div>
+  <div style="font-family: 'Manrope', Arial, sans-serif; background:#ffffff; padding:32px 16px;">
+    <div style="max-width:420px;margin:0 auto;background:#ffffff;border-radius:22px;border:1px solid #ede2d3;padding:30px 26px;text-align:center;box-shadow:0 6px 24px rgba(43,22,8,0.06);">
+      ${
+        logoSrc
+          ? `<div style="width:52px;height:52px;border-radius:14px;background:#ffffff;margin:0 auto 14px;padding:6px;border:1px solid #ede2d3;box-shadow:0 6px 14px rgba(43,22,8,0.12);">
+              <img src="${esc(logoSrc)}" width="40" height="40" alt="Logo Département de Géographie" style="display:block;width:40px;height:40px;object-fit:contain;border-radius:7px;margin:0 auto;" />
+            </div>`
+          : ''
+      }
+      <span style="display:inline-block;background:#fff1e0;color:#c2410c;font-weight:800;font-size:10.5px;padding:5px 11px;border-radius:9px;margin-bottom:12px;">UJLOG ÉTUDIANT</span>
+      <h1 style="margin:0 0 6px;font-family:Georgia,'Times New Roman',serif;font-weight:700;font-size:18px;color:#2b1608;">${esc(title)}</h1>
+      <div style="font-size:13px;line-height:1.6;color:#92703f;text-align:left;margin-top:14px;">${bodyHtml}</div>
+      ${
+        ctaUrl
+          ? `<div style="margin-top:22px;">
+              <a href="${esc(ctaUrl)}" style="display:inline-block;background:#e06600;color:#fff7ed;text-decoration:none;font-weight:800;font-size:13px;padding:12px 26px;border-radius:14px;">${esc(ctaLabel)}</a>
+            </div>`
+          : ''
+      }
+      <p style="margin:20px 0 0;padding-top:16px;border-top:1px solid #ede2d3;font-size:10px;color:#92703f;opacity:0.75;">Si vous n'êtes pas à l'origine de cette action, ignorez simplement cet e-mail.</p>
     </div>
   </div>`;
 }

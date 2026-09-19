@@ -191,17 +191,23 @@ export function DelegatesView({
           </p>
         </div>
 
-        <button
-          type="button"
-          onClick={() => {
-            setShowAddModal(true);
-            setSelectedStudentForNewDelegate(null);
-          }}
-          className="px-4 py-2.5 bg-terracotta-gradient active:scale-[0.99] text-white font-bold text-xs rounded-xl shadow-glow-orange hover:brightness-105 transition-all flex items-center justify-center gap-2 cursor-pointer"
-        >
-          <Plus className="w-4 h-4" />
-          <span>Ajouter un délégué</span>
-        </button>
+        <div className="flex items-center gap-2">
+          <div className="flex flex-col items-center justify-center px-3.5 py-1.5 rounded-2xl bg-ujlog-secondary-50 border border-ujlog-secondary-100 text-ujlog-secondary-dark min-w-[56px]">
+            <span className="font-display text-base font-bold leading-none">{delegates.length}</span>
+            <span className="text-[7px] font-bold uppercase tracking-wider mt-0.5">Délégués</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              setShowAddModal(true);
+              setSelectedStudentForNewDelegate(null);
+            }}
+            className="px-4 py-2.5 bg-terracotta-gradient active:scale-[0.99] text-white font-bold text-xs rounded-xl shadow-glow-orange hover:brightness-105 transition-all flex items-center justify-center gap-2 cursor-pointer"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Ajouter un délégué</span>
+          </button>
+        </div>
       </div>
 
       {/* Tabs Bar */}
@@ -513,7 +519,7 @@ export function DelegatesView({
                     <UserCheck className="w-5 h-5" />
                   </div>
                   <div>
-                    <h3 className="text-sm font-black uppercase tracking-wider text-ujlog-ink">ATTRIBUER LE RÔLE DÉLÉGUÉ</h3>
+                    <h3 className="font-display text-sm font-bold text-ujlog-ink">Attribuer le rôle délégué</h3>
                     <p className="text-[10px] text-ujlog-ink-soft/60">Sélectionnez un étudiant existant et définissez sa section</p>
                   </div>
                 </div>
@@ -749,7 +755,7 @@ export function DelegatesView({
                   <AlertTriangle className="w-6 h-6" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-black uppercase text-ujlog-ink">Confirmation de Révocation</h3>
+                  <h3 className="font-display text-sm font-bold text-ujlog-ink">Confirmation de révocation</h3>
                   <p className="text-[11px] text-ujlog-ink-soft/60">Rôle de Délégué Académique</p>
                 </div>
               </div>
@@ -797,7 +803,7 @@ export function DelegatesView({
               className="bg-white border border-ujlog-border rounded-3xl p-6 max-w-md w-full space-y-4 shadow-2xl text-ujlog-ink"
             >
               <div className="flex items-center justify-between border-b border-ujlog-border pb-3">
-                <h3 className="text-sm font-black uppercase text-ujlog-ink">MODIFIER LE DÉLÉGUÉ</h3>
+                <h3 className="font-display text-sm font-bold text-ujlog-ink">Modifier le délégué</h3>
                 <button
                   type="button"
                   onClick={() => setEditingDelegate(null)}

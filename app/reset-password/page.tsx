@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { Eye, EyeOff, ArrowLeft, CheckCircle, AlertTriangle, Loader2 } from 'lucide-react';
+import { Eye, EyeOff, ArrowLeft, CheckCircle, AlertTriangle, Loader2, KeyRound } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { PasswordStrengthMeter, evaluatePassword } from '@/components/auth/password-strength-meter';
 import { ClientAuthService } from '@/lib/client-auth-service';
@@ -13,27 +13,25 @@ type LinkState = 'checking' | 'valid' | 'invalid';
 
 function Shell({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-screen bg-ujlog-cream flex flex-col">
-      <header className="w-full bg-white border-b border-ujlog-border px-4 py-3 sm:px-8 sm:py-4 flex items-center justify-between">
-        <Link href="/login" className="flex items-center gap-2 text-ujlog-ink-soft hover:text-ujlog-primary-dark transition-colors group">
-          <div className="w-8 h-8 rounded-xl bg-ujlog-cream flex items-center justify-center group-hover:bg-ujlog-primary-light transition-colors">
-            <ArrowLeft className="w-4 h-4" />
+    <div className="min-h-screen bg-white flex flex-col items-center justify-center p-4">
+      {/* Header mobile uniquement */}
+      <header className="lg:hidden w-full max-w-[420px] mb-3">
+        <Link href="/login" className="flex items-center gap-2 text-ujlog-ink-soft hover:text-ujlog-ink transition-colors group w-fit">
+          <div className="w-8 h-8 rounded-xl bg-ujlog-cream border border-ujlog-border flex items-center justify-center group-hover:border-ujlog-primary/40 transition-colors">
+            <ArrowLeft className="w-3.5 h-3.5" />
           </div>
-          <span className="text-xs font-bold uppercase tracking-wider hidden sm:block">Retour</span>
+          <span className="text-xs font-bold uppercase tracking-wider">Retour</span>
         </Link>
-        <div className="flex items-center gap-2.5">
-          <div className="relative w-7 h-7 bg-white rounded-lg p-1 border border-ujlog-border">
-            <Image src="/logo-ujlog.png" alt="Logo UJLOG" fill className="object-contain" referrerPolicy="no-referrer" />
-          </div>
-          <span className="font-display font-bold text-ujlog-ink tracking-tight text-sm">UJLOG ÉTUDIANT</span>
-        </div>
       </header>
 
-      <main className="flex-1 flex items-center justify-center p-4">
-        <div className="bg-white w-full max-w-md rounded-3xl shadow-soft-warm border border-ujlog-border p-6 sm:p-8">
-          {children}
+      <div className="bg-white w-full max-w-[420px] rounded-3xl shadow-soft-warm border border-ujlog-border p-7 sm:p-9 text-center">
+        <div className="w-16 h-16 rounded-2xl bg-white shadow-md border border-ujlog-border flex items-center justify-center p-2 mx-auto mb-5">
+          <div className="relative w-full h-full">
+            <Image src="/logo-geographie.jpg" alt="Logo Département de Géographie" fill className="object-contain rounded-lg" referrerPolicy="no-referrer" />
+          </div>
         </div>
-      </main>
+        {children}
+      </div>
     </div>
   );
 }
@@ -176,8 +174,8 @@ export default function ResetPasswordPage() {
     return (
       <Shell>
         <div className="text-center flex flex-col items-center">
-          <div className="w-14 h-14 bg-red-50 text-red-600 rounded-2xl flex items-center justify-center mb-4 border border-red-100">
-            <AlertTriangle className="w-6 h-6" />
+          <div className="w-16 h-16 bg-red-50 text-red-600 rounded-full flex items-center justify-center mb-4 border border-red-100">
+            <AlertTriangle className="w-7 h-7" />
           </div>
           <h1 className="font-display text-lg font-bold text-ujlog-ink mb-2">Lien invalide ou expiré</h1>
           <p className="text-xs text-ujlog-ink-soft leading-relaxed mb-6 max-w-xs">
@@ -199,8 +197,8 @@ export default function ResetPasswordPage() {
     return (
       <Shell>
         <div className="text-center flex flex-col items-center">
-          <div className="w-14 h-14 bg-ujlog-secondary-50 text-ujlog-secondary rounded-2xl flex items-center justify-center mb-4 border border-ujlog-secondary-100">
-            <CheckCircle className="w-6 h-6" />
+          <div className="w-16 h-16 bg-gradient-to-br from-green-100 to-emerald-200 text-ujlog-secondary-dark rounded-full flex items-center justify-center mb-4">
+            <CheckCircle className="w-7 h-7" />
           </div>
           <h1 className="font-display text-lg font-bold text-ujlog-ink mb-2">Mot de passe modifié</h1>
           <p className="text-xs text-ujlog-ink-soft leading-relaxed mb-6">
@@ -221,17 +219,21 @@ export default function ResetPasswordPage() {
   return (
     <Shell>
       <div className="text-center mb-6">
-        <h1 className="font-display text-lg font-bold text-ujlog-ink mb-1.5">Nouveau mot de passe</h1>
-        <p className="text-xs text-ujlog-ink-soft">Définissez un nouveau mot de passe sécurisé pour votre compte.</p>
+        <span className="inline-flex items-center gap-1.5 bg-ujlog-primary-light text-ujlog-primary-dark text-xs font-bold px-3 py-1.5 rounded-xl mb-3">
+          <KeyRound className="w-3.5 h-3.5" />
+          Nouveau mot de passe
+        </span>
+        <h1 className="font-display text-lg font-bold text-ujlog-ink mb-1.5">Définissez un nouveau mot de passe</h1>
+        <p className="text-xs text-ujlog-ink-soft">Choisissez un mot de passe sécurisé pour votre compte.</p>
       </div>
 
       {error && (
-        <div className="mb-4 p-3 bg-red-50 text-red-700 rounded-xl text-xs font-medium border border-red-200/80">
+        <div className="mb-4 p-3 bg-red-50 text-red-700 rounded-xl text-xs font-medium border border-red-200/80 text-left">
           {error}
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-4 text-left">
         <div className="space-y-1.5">
           <label className="text-[11px] font-bold text-ujlog-ink-soft uppercase tracking-wider block">
             Nouveau mot de passe
@@ -242,13 +244,14 @@ export default function ResetPasswordPage() {
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="Entrez votre mot de passe"
-              className="w-full px-4 py-3 pr-11 rounded-2xl border border-ujlog-border bg-white text-sm font-medium text-ujlog-ink placeholder:text-ujlog-ink-soft/60 focus:outline-none focus:ring-2 focus:ring-ujlog-primary/20 focus:border-ujlog-primary transition-all"
+              placeholder="Votre mot de passe"
+              className="w-full px-4 py-3 pr-11 rounded-xl border border-ujlog-border bg-ujlog-cream text-sm font-medium text-ujlog-ink placeholder:text-ujlog-ink-soft/60 focus:bg-white focus:outline-none focus:ring-2 focus:ring-ujlog-primary/20 focus:border-ujlog-primary transition-all"
             />
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
               className="absolute right-3.5 top-1/2 -translate-y-1/2 text-ujlog-ink-soft/70 hover:text-ujlog-ink-soft transition-colors p-1"
+              aria-label="Afficher ou masquer mot de passe"
             >
               {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
             </button>
@@ -267,12 +270,13 @@ export default function ResetPasswordPage() {
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               placeholder="Confirmez votre mot de passe"
-              className="w-full px-4 py-3 pr-11 rounded-2xl border border-ujlog-border bg-white text-sm font-medium text-ujlog-ink placeholder:text-ujlog-ink-soft/60 focus:outline-none focus:ring-2 focus:ring-ujlog-primary/20 focus:border-ujlog-primary transition-all"
+              className="w-full px-4 py-3 pr-11 rounded-xl border border-ujlog-border bg-ujlog-cream text-sm font-medium text-ujlog-ink placeholder:text-ujlog-ink-soft/60 focus:bg-white focus:outline-none focus:ring-2 focus:ring-ujlog-primary/20 focus:border-ujlog-primary transition-all"
             />
             <button
               type="button"
               onClick={() => setShowConfirm(!showConfirm)}
               className="absolute right-3.5 top-1/2 -translate-y-1/2 text-ujlog-ink-soft/70 hover:text-ujlog-ink-soft transition-colors p-1"
+              aria-label="Afficher ou masquer mot de passe"
             >
               {showConfirm ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
             </button>
@@ -285,7 +289,7 @@ export default function ResetPasswordPage() {
         <button
           type="submit"
           disabled={isLoading}
-          className="w-full bg-ujlog-primary-dark text-white py-3.5 rounded-2xl font-bold text-sm hover:brightness-105 transition-all disabled:opacity-70 cursor-pointer mt-2"
+          className="w-full bg-terracotta-gradient text-white py-3.5 rounded-2xl font-bold text-sm shadow-glow-orange hover:brightness-105 transition-all disabled:opacity-70 cursor-pointer mt-2"
         >
           {isLoading ? 'Enregistrement...' : 'Réinitialiser mon mot de passe'}
         </button>

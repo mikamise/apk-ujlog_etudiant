@@ -51,7 +51,7 @@ export function HowItWorksFaq() {
         <div>
           <div className="text-center mb-10 space-y-2">
             <p className="text-[11px] font-bold text-ujlog-primary uppercase tracking-widest">Simple et rapide</p>
-            <h2 className="text-2xl sm:text-3xl font-black text-ujlog-ink tracking-tight">Comment ça marche ?</h2>
+            <h2 className="font-display text-2xl sm:text-3xl font-bold text-ujlog-ink tracking-tight">Comment ça marche ?</h2>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
@@ -81,7 +81,7 @@ export function HowItWorksFaq() {
         <div id="faq">
           <div className="text-center mb-8 space-y-2">
             <p className="text-[11px] font-bold text-ujlog-secondary uppercase tracking-widest">Questions fréquentes</p>
-            <h2 className="text-2xl sm:text-3xl font-black text-ujlog-ink tracking-tight">FAQ</h2>
+            <h2 className="font-display text-2xl sm:text-3xl font-bold text-ujlog-ink tracking-tight">FAQ</h2>
           </div>
 
           <div className="max-w-2xl mx-auto space-y-2.5">

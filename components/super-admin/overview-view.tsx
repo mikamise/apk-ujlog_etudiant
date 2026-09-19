@@ -152,7 +152,7 @@ export function OverviewView({
           <div className="flex items-center justify-between border-b border-ujlog-border pb-3">
             <div className="flex items-center gap-2">
               <Activity className="w-4 h-4 text-ujlog-primary" />
-              <h3 className="text-xs font-bold text-ujlog-ink">
+              <h3 className="font-display text-sm font-bold text-ujlog-ink">
                 Activité récente de la plateforme
               </h3>
             </div>
@@ -204,7 +204,7 @@ export function OverviewView({
         {/* Quick System Status Panel */}
         <div className="bg-white border border-ujlog-border rounded-3xl p-5 space-y-4 shadow-soft-warm">
           <div className="border-b border-ujlog-border pb-3 flex items-center justify-between">
-            <h3 className="text-xs font-bold text-ujlog-ink">
+            <h3 className="font-display text-sm font-bold text-ujlog-ink">
               État du système
             </h3>
             <span className="px-2 py-0.5 bg-ujlog-secondary-50 text-ujlog-secondary border border-ujlog-secondary-100 text-[10px] font-bold rounded-full">

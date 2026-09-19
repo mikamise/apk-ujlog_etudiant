@@ -116,19 +116,25 @@ export function SuperAdminsView() {
           </p>
         </div>
 
-        <button
-          type="button"
-          onClick={() => {
-            setShowAddModal(true);
-            setSubmitError(null);
-            setSubmitSuccess(null);
-            setNewEmail('');
-          }}
-          className="px-4 py-2.5 bg-green-600 hover:bg-green-700 text-white font-bold text-xs rounded-xl shadow-xs flex items-center gap-2 cursor-pointer transition-all"
-        >
-          <Plus className="w-4 h-4" />
-          <span>Inviter un administrateur</span>
-        </button>
+        <div className="flex items-stretch gap-2">
+          <div className="flex flex-col items-center justify-center px-3.5 py-1.5 rounded-2xl bg-ujlog-secondary-50 border border-ujlog-secondary-100 text-ujlog-secondary-dark min-w-[56px]">
+            <span className="font-display text-base font-bold leading-none">{filteredInvitations.length}</span>
+            <span className="text-[7px] font-bold uppercase tracking-wider mt-0.5">Comptes</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              setShowAddModal(true);
+              setSubmitError(null);
+              setSubmitSuccess(null);
+              setNewEmail('');
+            }}
+            className="px-4 py-2.5 bg-green-600 hover:bg-green-700 text-white font-bold text-xs rounded-xl shadow-xs flex items-center gap-2 cursor-pointer transition-all"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Inviter un administrateur</span>
+          </button>
+        </div>
       </div>
 
       {/* Info Card */}
@@ -219,7 +225,7 @@ export function SuperAdminsView() {
                     <KeyRound className="w-5 h-5" />
                   </div>
                   <div>
-                    <h3 className="text-sm font-black uppercase text-ujlog-ink">Nouvelle invitation</h3>
+                    <h3 className="font-display text-sm font-bold text-ujlog-ink">Nouvelle invitation</h3>
                     <p className="text-[10px] text-ujlog-ink-soft">Envoi d&apos;un lien d&apos;activation sécurisé</p>
                   </div>
                 </div>

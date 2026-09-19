@@ -146,7 +146,7 @@ export function ArchivageView() {
               <Archive className="w-3.5 h-3.5 text-green-300" />
               <span>Gestion des Années Universitaires & Archives</span>
             </div>
-            <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight">
+            <h1 className="font-display text-xl sm:text-2xl font-bold text-white tracking-tight">
               Archivage Annuel & Conservation Pédagogique
             </h1>
             <p className="text-xs text-orange-100/90 leading-relaxed font-normal">
@@ -318,7 +318,7 @@ export function ArchivageView() {
                 <Archive className="w-6 h-6" />
               </div>
               <div>
-                <h3 className="text-base font-black text-ujlog-ink uppercase">Clôture & Archivage Annuel</h3>
+                <h3 className="font-display text-base font-bold text-ujlog-ink">Clôture &amp; archivage annuel</h3>
                 <p className="text-xs text-ujlog-ink-soft">Procédure officielle de passage d&apos;année universitaire</p>
               </div>
             </div>

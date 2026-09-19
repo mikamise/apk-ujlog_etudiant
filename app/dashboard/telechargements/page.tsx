@@ -81,16 +81,26 @@ export default function TelechargementsPage() {
             </div>
             <span>Tableau de bord</span>
           </Link>
-          <h1 className="text-base sm:text-lg font-bold text-ujlog-ink tracking-tight">Mes téléchargements</h1>
+          <h1 className="font-display text-lg sm:text-xl font-bold text-ujlog-ink tracking-tight">Mes téléchargements</h1>
           <p className="text-ujlog-ink-soft font-normal text-xs mt-0.5">
             Documents disponibles hors ligne, enregistrés sur cet appareil.
           </p>
         </div>
 
-        <div className="bg-white px-3 py-2 rounded-xl border border-ujlog-border shadow-soft-warm self-start sm:self-auto flex items-center gap-2">
-          <HardDrive className="w-3.5 h-3.5 text-ujlog-primary" />
-          <span className="text-xs font-bold text-ujlog-ink">{formatBytes(totalBytes)}</span>
-          <span className="text-[10px] text-ujlog-ink-soft">utilisés sur cet appareil</span>
+        <div className="flex items-stretch gap-2 self-start sm:self-auto">
+          <div className="flex flex-col items-center justify-center px-4 py-2 rounded-2xl bg-terracotta-gradient text-white shadow-glow-orange min-w-[76px]">
+            <span className="font-display text-xl font-bold leading-none">{records.length}</span>
+            <span className="text-[8px] font-bold uppercase tracking-wider mt-1 opacity-90">
+              {records.length <= 1 ? 'Fichier' : 'Fichiers'}
+            </span>
+          </div>
+          <div className="flex items-center gap-2 px-3.5 rounded-2xl border border-ujlog-border bg-white">
+            <HardDrive className="w-3.5 h-3.5 text-ujlog-primary shrink-0" />
+            <div className="leading-tight">
+              <span className="block text-xs font-bold text-ujlog-ink">{formatBytes(totalBytes)}</span>
+              <span className="block text-[9px] text-ujlog-ink-soft">utilisés</span>
+            </div>
+          </div>
         </div>
       </div>
 

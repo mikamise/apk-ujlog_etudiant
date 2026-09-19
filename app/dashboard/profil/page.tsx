@@ -18,7 +18,8 @@ import {
   Lock,
   Eye,
   EyeOff,
-  AlertCircle
+  AlertCircle,
+  X
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { PasswordStrengthMeter, evaluatePassword } from '@/components/auth/password-strength-meter';
@@ -336,7 +337,7 @@ export default function ProfilPage() {
       <form onSubmit={handleSubmit} className="bg-white p-4 sm:p-6 rounded-2xl border border-ujlog-border shadow-2xs space-y-5">
         
         <div className="border-b border-ujlog-border pb-3">
-          <h2 className="text-xs sm:text-sm font-bold text-ujlog-ink tracking-tight">
+          <h2 className="font-display text-sm sm:text-base font-bold text-ujlog-ink tracking-tight">
             Informations Personnelles & Universitaires
           </h2>
           <p className="text-xs text-ujlog-ink-soft font-normal mt-0.5">
@@ -477,7 +478,7 @@ export default function ProfilPage() {
         <div className="bg-ujlog-cream rounded-xl p-3.5 border border-ujlog-border flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
           <div className="flex items-center gap-2 text-ujlog-ink-soft">
             <Building2 className="w-4 h-4 text-ujlog-primary-dark shrink-0" />
-            <span className="font-semibold">Université Jean Lorougnon Guédé • Daloa (Côte d&apos;Ivoire)</span>
+            <span className="font-semibold">Département de Géographie • Daloa (Côte d&apos;Ivoire)</span>
           </div>
           <span className="text-[11px] text-ujlog-ink-soft/60 font-medium">UFR Sciences Sociales</span>
         </div>
@@ -520,7 +521,7 @@ export default function ProfilPage() {
                     <Lock className="w-4 h-4" />
                   </div>
                   <div>
-                    <h3 className="text-sm font-bold text-ujlog-ink">Changer de mot de passe</h3>
+                    <h3 className="font-display text-sm sm:text-base font-bold text-ujlog-ink">Changer de mot de passe</h3>
                     <p className="text-[11px] text-ujlog-ink-soft">8 caractères min, majuscule, minuscule, chiffre</p>
                   </div>
                 </div>
@@ -528,7 +529,7 @@ export default function ProfilPage() {
                   onClick={() => setIsPasswordModalOpen(false)}
                   className="text-ujlog-ink-soft/60 hover:text-ujlog-ink-soft p-1.5 rounded-lg"
                 >
-                  ✕
+                  <X className="w-4 h-4" />
                 </button>
               </div>
 

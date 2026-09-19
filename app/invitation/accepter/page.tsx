@@ -3,6 +3,7 @@
 import { useState, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import { CheckCircle2, AlertCircle, Loader2, ShieldCheck } from 'lucide-react';
 
 function AcceptInvitationForm() {
@@ -60,17 +61,17 @@ function AcceptInvitationForm() {
     const targetLogin = isStaffAdmin ? '/super-admin/login' : '/login';
 
     return (
-      <div className="bg-ujlog-cream-2 w-full max-w-sm rounded-[32px] shadow-soft-warm border border-white/60 p-7 text-center space-y-4">
+      <div className="bg-white w-full max-w-sm rounded-3xl shadow-soft-warm border border-ujlog-border p-7 text-center space-y-4">
         <div className="w-14 h-14 bg-green-gradient text-white rounded-2xl flex items-center justify-center shadow-glow-green mx-auto">
           <CheckCircle2 className="w-6 h-6" />
         </div>
-        <h1 className="font-display text-base font-bold text-ujlog-ink">Compte activé</h1>
+        <h1 className="font-display text-lg font-bold text-ujlog-ink">Compte activé</h1>
         <p className="text-xs text-ujlog-ink-soft leading-relaxed">
           Votre compte officiel a été activé avec succès. Vous pouvez désormais vous connecter immédiatement avec vos identifiants.
         </p>
         <Link
           href={targetLogin}
-          className="inline-flex w-full items-center justify-center bg-terracotta-gradient text-white py-3 rounded-2xl font-bold text-xs shadow-glow-orange hover:brightness-110 transition-all"
+          className="inline-flex w-full items-center justify-center bg-terracotta-gradient text-white py-3 rounded-2xl font-bold text-sm shadow-glow-orange hover:brightness-105 transition-all"
         >
           {isStaffAdmin ? 'Accéder à la console Super Admin' : 'Aller à la connexion'}
         </Link>
@@ -79,12 +80,13 @@ function AcceptInvitationForm() {
   }
 
   return (
-    <div className="bg-ujlog-cream-2 w-full max-w-sm rounded-[32px] shadow-soft-warm border border-white/60 p-7 space-y-4">
+    <div className="bg-white w-full max-w-sm rounded-3xl shadow-soft-warm border border-ujlog-border p-7 space-y-4">
       <div className="text-center space-y-1.5">
-        <div className="w-12 h-12 bg-terracotta-gradient text-white rounded-2xl flex items-center justify-center shadow-glow-orange mx-auto mb-1">
-          <ShieldCheck className="w-5 h-5" />
-        </div>
-        <h1 className="font-display text-base font-bold text-ujlog-ink">Activer mon invitation</h1>
+        <span className="inline-flex items-center gap-1.5 bg-ujlog-primary-light text-ujlog-primary-dark text-xs font-bold px-3 py-1.5 rounded-xl mb-1">
+          <ShieldCheck className="w-3.5 h-3.5" />
+          Invitation officielle
+        </span>
+        <h1 className="font-display text-lg font-bold text-ujlog-ink">Activer mon invitation</h1>
         <p className="text-xs text-ujlog-ink-soft">Créez votre mot de passe pour finaliser votre compte.</p>
       </div>
 
@@ -109,14 +111,14 @@ function AcceptInvitationForm() {
             placeholder="Prénom"
             value={firstName}
             onChange={(e) => setFirstName(e.target.value)}
-            className="px-3.5 py-2.5 rounded-2xl border border-ujlog-border bg-ujlog-cream text-xs font-medium text-ujlog-ink focus:outline-none focus:ring-2 focus:ring-green-500/25 focus:border-ujlog-secondary"
+            className="px-3.5 py-2.5 rounded-xl border border-ujlog-border bg-ujlog-cream text-xs font-medium text-ujlog-ink focus:bg-white focus:outline-none focus:ring-2 focus:ring-ujlog-primary/20 focus:border-ujlog-primary transition-all"
           />
           <input
             required
             placeholder="Nom"
             value={lastName}
             onChange={(e) => setLastName(e.target.value)}
-            className="px-3.5 py-2.5 rounded-2xl border border-ujlog-border bg-ujlog-cream text-xs font-medium text-ujlog-ink focus:outline-none focus:ring-2 focus:ring-green-500/25 focus:border-ujlog-secondary"
+            className="px-3.5 py-2.5 rounded-xl border border-ujlog-border bg-ujlog-cream text-xs font-medium text-ujlog-ink focus:bg-white focus:outline-none focus:ring-2 focus:ring-ujlog-primary/20 focus:border-ujlog-primary transition-all"
           />
         </div>
         <input
@@ -125,7 +127,7 @@ function AcceptInvitationForm() {
           placeholder="Nouveau mot de passe"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          className="w-full px-3.5 py-2.5 rounded-2xl border border-ujlog-border bg-ujlog-cream text-xs font-medium text-ujlog-ink focus:outline-none focus:ring-2 focus:ring-green-500/25 focus:border-ujlog-secondary"
+          className="w-full px-3.5 py-2.5 rounded-xl border border-ujlog-border bg-ujlog-cream text-xs font-medium text-ujlog-ink focus:bg-white focus:outline-none focus:ring-2 focus:ring-ujlog-primary/20 focus:border-ujlog-primary transition-all"
         />
         <input
           required
@@ -133,12 +135,12 @@ function AcceptInvitationForm() {
           placeholder="Confirmer le mot de passe"
           value={confirmPassword}
           onChange={(e) => setConfirmPassword(e.target.value)}
-          className="w-full px-3.5 py-2.5 rounded-2xl border border-ujlog-border bg-ujlog-cream text-xs font-medium text-ujlog-ink focus:outline-none focus:ring-2 focus:ring-green-500/25 focus:border-ujlog-secondary"
+          className="w-full px-3.5 py-2.5 rounded-xl border border-ujlog-border bg-ujlog-cream text-xs font-medium text-ujlog-ink focus:bg-white focus:outline-none focus:ring-2 focus:ring-ujlog-primary/20 focus:border-ujlog-primary transition-all"
         />
         <button
           type="submit"
           disabled={isLoading || !token}
-          className="w-full bg-terracotta-gradient text-white py-3 rounded-2xl font-bold text-xs shadow-glow-orange hover:brightness-110 transition-all disabled:opacity-60 flex items-center justify-center gap-2"
+          className="w-full bg-terracotta-gradient text-white py-3 rounded-2xl font-bold text-sm shadow-glow-orange hover:brightness-105 transition-all disabled:opacity-60 flex items-center justify-center gap-2 cursor-pointer"
         >
           {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <span>Activer mon compte</span>}
         </button>
@@ -149,8 +151,13 @@ function AcceptInvitationForm() {
 
 export default function AcceptInvitationPage() {
   return (
-    <div className="min-h-screen bg-terracotta-gradient flex items-center justify-center p-4">
-      <Suspense fallback={<Loader2 className="w-6 h-6 animate-spin text-white" />}>
+    <div className="min-h-screen bg-white flex flex-col items-center justify-center p-4">
+      <div className="w-16 h-16 rounded-2xl bg-white shadow-md border border-ujlog-border flex items-center justify-center p-2 mx-auto mb-5">
+        <div className="relative w-full h-full">
+          <Image src="/logo-geographie.jpg" alt="Logo Département de Géographie" fill className="object-contain rounded-lg" referrerPolicy="no-referrer" />
+        </div>
+      </div>
+      <Suspense fallback={<Loader2 className="w-6 h-6 animate-spin text-ujlog-primary" />}>
         <AcceptInvitationForm />
       </Suspense>
     </div>

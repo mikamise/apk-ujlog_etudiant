@@ -17,19 +17,9 @@ export function Footer() {
 
           {/* Column 1: Identity & Department (5 Cols) */}
           <div className="lg:col-span-5 space-y-5">
-            {/* Dual Logos Container */}
+            {/* Logo du département */}
             <div className="flex items-center gap-3 bg-white/10 backdrop-blur-md p-3 rounded-2xl w-fit border border-white/15 shadow-md">
-              <div className="relative w-10 h-10 bg-white rounded-xl p-1 flex items-center justify-center">
-                <Image
-                  src="/logo-ujlog.png"
-                  alt="Logo UJLOG"
-                  fill
-                  className="object-contain"
-                  referrerPolicy="no-referrer"
-                />
-              </div>
-              <div className="h-6 w-px bg-white/20"></div>
-              <div className="relative w-10 h-10 bg-white rounded-xl p-1 flex items-center justify-center">
+              <div className="relative w-12 h-12 bg-white rounded-xl p-1 flex items-center justify-center">
                 <Image
                   src="/logo-geographie.jpg"
                   alt="Logo Département Géographie"
@@ -49,7 +39,7 @@ export function Footer() {
                 Département de Géographie
               </h3>
               <p className="text-xs font-semibold text-orange-300">
-                UFR Sciences Sociales • Université Jean Lorougnon Guédé
+                UFR Sciences Sociales • Département de Géographie
               </p>
             </div>
 

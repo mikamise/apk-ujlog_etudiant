@@ -145,9 +145,10 @@ export function CoursesView({
         </div>
 
         <div className="flex items-center gap-2.5">
-          <span className="text-xs font-bold text-ujlog-primary bg-ujlog-primary-light border border-ujlog-primary/20 px-3 py-2 rounded-xl">
-            {filteredCourses.length} cours
-          </span>
+          <div className="flex flex-col items-center justify-center px-3.5 py-1.5 rounded-2xl bg-terracotta-gradient text-white shadow-glow-orange min-w-[56px]">
+            <span className="font-display text-base font-bold leading-none">{filteredCourses.length}</span>
+            <span className="text-[7px] font-bold uppercase tracking-wider mt-0.5">Cours</span>
+          </div>
           <button
             type="button"
             onClick={() => setShowAddModal(true)}

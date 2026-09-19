@@ -12,7 +12,7 @@ type ConfirmState = 'checking' | 'success' | 'invalid';
 
 function Shell({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-screen bg-ujlog-cream flex flex-col">
+    <div className="min-h-screen bg-white flex flex-col">
       <header className="w-full bg-white border-b border-ujlog-border px-4 py-3 sm:px-8 sm:py-4 flex items-center justify-between">
         <Link href="/login" className="flex items-center gap-2 text-ujlog-ink-soft hover:text-ujlog-primary-dark transition-colors group">
           <div className="w-8 h-8 rounded-xl bg-ujlog-cream flex items-center justify-center group-hover:bg-ujlog-primary-light transition-colors">
@@ -22,9 +22,9 @@ function Shell({ children }: { children: React.ReactNode }) {
         </Link>
         <div className="flex items-center gap-2.5">
           <div className="relative w-7 h-7 bg-white rounded-lg p-1 border border-ujlog-border">
-            <Image src="/logo-ujlog.png" alt="Logo UJLOG" fill className="object-contain" referrerPolicy="no-referrer" />
+            <Image src="/logo-geographie.jpg" alt="Logo Département de Géographie" fill className="object-contain rounded-md" referrerPolicy="no-referrer" />
           </div>
-          <span className="font-display font-bold text-ujlog-ink tracking-tight text-sm">UJLOG ÉTUDIANT</span>
+          <span className="font-display font-bold text-ujlog-ink tracking-tight text-sm">UJLOG Étudiant</span>
         </div>
       </header>
 
@@ -191,8 +191,9 @@ function ConfirmAccountContent() {
               </p>
 
               {resendStatus === 'sent' ? (
-                <div className="p-2.5 bg-green-50 text-green-800 rounded-xl text-xs font-semibold border border-green-200 text-center">
-                  ✓ Nouvel e-mail envoyé ! Vérifiez votre boîte de réception.
+                <div className="p-2.5 bg-green-50 text-green-800 rounded-xl text-xs font-semibold border border-green-200 text-center flex items-center justify-center gap-1.5">
+                  <CheckCircle className="w-3.5 h-3.5" />
+                  <span>Nouvel e-mail envoyé ! Vérifiez votre boîte de réception.</span>
                 </div>
               ) : (
                 <form onSubmit={handleResend} className="space-y-2">

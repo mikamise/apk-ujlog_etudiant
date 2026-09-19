@@ -35,18 +35,13 @@ export function AdminHeader({
           <Menu className="w-5 h-5" />
         </button>
 
-        <div className="flex items-center gap-2.5">
-          <div className="flex items-center gap-1.5 p-1 bg-ujlog-cream rounded-xl border border-ujlog-border shadow-2xs">
-            <div className="relative w-6 h-6 bg-white rounded-md p-0.5 shadow-2xs">
-              <Image src="/logo-ujlog.png" alt="Logo UJLOG" fill className="object-contain" referrerPolicy="no-referrer" />
-            </div>
-            <div className="relative w-6 h-6 bg-white rounded-md p-0.5 shadow-2xs">
-              <Image src="/logo-geographie.jpg" alt="Logo Département Géographie" fill className="object-contain rounded-xs" referrerPolicy="no-referrer" />
-            </div>
+        <div className="flex items-center gap-3">
+          <div className="relative w-10 h-10 bg-white rounded-2xl p-1.5 border border-ujlog-border shadow-soft-warm shrink-0">
+            <Image src="/logo-geographie.jpg" alt="Logo Département de Géographie" fill className="object-contain rounded-xl" referrerPolicy="no-referrer" />
           </div>
           <div>
-            <h2 className="text-xs font-black text-ujlog-ink uppercase tracking-wider hidden sm:block">
-              UNIVERSITÉ JEAN LOROUGNON GUÉDÉ
+            <h2 className="font-display text-sm font-bold text-ujlog-ink tracking-tight hidden sm:block">
+              Département de Géographie
             </h2>
             <p className="text-[10px] text-green-700 font-bold uppercase tracking-tight">
               Espace de Contrôle Global • Dép. Géographie

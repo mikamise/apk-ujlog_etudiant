@@ -30,18 +30,7 @@ export function Header() {
         <Link href="/" className="flex items-center gap-3 group">
           {/* Dual Institutional Logos */}
           <div className="flex items-center gap-2 p-1.5 bg-ujlog-cream group-hover:bg-orange-50/60 rounded-2xl border border-ujlog-border transition-colors">
-            <div className="relative w-8 h-8 sm:w-9 sm:h-9 bg-white rounded-lg p-0.5 shadow-2xs">
-              <Image 
-                src="/logo-ujlog.png" 
-                alt="Logo UJLOG" 
-                fill
-                className="object-contain"
-                referrerPolicy="no-referrer"
-                priority
-              />
-            </div>
-            <div className="h-5 w-px bg-ujlog-border"></div>
-            <div className="relative w-8 h-8 sm:w-9 sm:h-9 bg-white rounded-lg p-0.5 shadow-2xs">
+            <div className="relative w-9 h-9 sm:w-10 sm:h-10 bg-white rounded-lg p-0.5 shadow-2xs">
               <Image 
                 src="/logo-geographie.jpg" 
                 alt="Logo Département Géographie" 

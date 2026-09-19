@@ -78,18 +78,8 @@ export function Features() {
           transition={{ duration: 0.5 }}
           className="text-center max-w-3xl mx-auto space-y-4"
         >
-          {/* Dual Institutional Badges */}
+          {/* Badge institutionnel — logo du département */}
           <div className="inline-flex items-center gap-3 p-2 bg-ujlog-cream border border-ujlog-border rounded-2xl shadow-2xs mx-auto">
-            <div className="relative w-8 h-8 bg-white rounded-lg p-0.5 shadow-2xs border border-orange-100">
-              <Image 
-                src="/logo-ujlog.png" 
-                alt="Logo UJLOG" 
-                fill 
-                className="object-contain"
-                referrerPolicy="no-referrer"
-              />
-            </div>
-            <div className="h-4 w-px bg-ujlog-border" />
             <div className="relative w-8 h-8 bg-white rounded-lg p-0.5 shadow-2xs border border-orange-100">
               <Image 
                 src="/logo-geographie.jpg" 
@@ -117,7 +107,7 @@ export function Features() {
         {/* DUAL INSTITUTIONAL SHOWCASE (Université & Département with Photos) */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           
-          {/* Card 1: Université Jean Lorougnon Guédé */}
+          {/* Carte : Campus de l'université (photo + logo du département) */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -135,20 +125,20 @@ export function Features() {
               />
               <div className="absolute top-4 left-4 flex items-center gap-2">
                 <div className="relative w-10 h-10 bg-white rounded-xl p-1 shadow-md border border-orange-200">
-                  <Image src="/logo-ujlog.png" alt="Logo UJLOG" fill className="object-contain" referrerPolicy="no-referrer" />
+                  <Image src="/logo-geographie.jpg" alt="Logo Département de Géographie" fill className="object-contain rounded-lg" referrerPolicy="no-referrer" />
                 </div>
                 <span className="text-[10px] font-black uppercase tracking-wider bg-orange-900/90 text-orange-100 px-3 py-1 rounded-full shadow-md backdrop-blur-xs">
-                  Université Publique
+                  Campus Principal
                 </span>
               </div>
             </div>
 
             <div className="p-6 space-y-4 flex-1 flex flex-col justify-between bg-white">
               <div>
-                <p className="text-[11px] font-bold text-ujlog-primary-dark uppercase tracking-widest">Campus Principal • Daloa</p>
-                <h3 className="text-xl font-black text-ujlog-ink tracking-tight mt-0.5">Université Jean Lorougnon Guédé (UJLOG)</h3>
+                <p className="text-[11px] font-bold text-ujlog-primary-dark uppercase tracking-widest">Campus • Daloa</p>
+                <h3 className="font-display text-xl font-bold text-ujlog-ink tracking-tight mt-0.5">Un cadre d&apos;études moderne</h3>
                 <p className="text-xs sm:text-sm text-ujlog-ink-soft leading-relaxed mt-2">
-                  Créée pour promouvoir l&apos;excellence académique, l&apos;Université Jean Lorougnon Guédé offre un cadre d&apos;études moderne, rigoureux et tourné vers l&apos;innovation, le développement durable et la réussite des étudiants.
+                  Le Département de Géographie évolue au sein d&apos;un campus moderne et verdoyant, tourné vers l&apos;innovation, le développement durable et la réussite des étudiants.
                 </p>
               </div>
 
@@ -194,7 +184,7 @@ export function Features() {
             <div className="p-6 space-y-4 flex-1 flex flex-col justify-between bg-white">
               <div>
                 <p className="text-[11px] font-bold text-green-800 uppercase tracking-widest">Formation Spécialisée • Cartographie & SIG</p>
-                <h3 className="text-xl font-black text-ujlog-ink tracking-tight mt-0.5">Département de Géographie</h3>
+                <h3 className="font-display text-xl font-bold text-ujlog-ink tracking-tight mt-0.5">Département de Géographie</h3>
                 <p className="text-xs sm:text-sm text-ujlog-ink-soft leading-relaxed mt-2">
                   Le Département de Géographie assure une formation complète combinant géographie physique, géographie humaine, aménagement du territoire, analyse géomatique et ateliers pratiques de terrain.
                 </p>

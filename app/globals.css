@@ -21,10 +21,10 @@
   /* Warm neutrals */
   --color-ujlog-ink: #221a12;
   --color-ujlog-ink-soft: #7a6f61;
-  --color-ujlog-cream: #fdf8f2;
+  --color-ujlog-cream: #faf9f7;
   --color-ujlog-cream-2: #ffffff;
   --color-ujlog-border: #ede2d3;
-  --color-ujlog-bg: #fdf8f2;
+  --color-ujlog-bg: #ffffff;
   --color-ujlog-light: #f0fdf4;
 
   /* Status */
@@ -40,7 +40,7 @@
   --color-ujlog-chip-purple: #7c3aed;
   --color-ujlog-chip-rose: #e11d48;
 
-  --font-display: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Times New Roman", Times, serif;
   --font-body: "Manrope", ui-sans-serif, system-ui, sans-serif;
 
   /* Soft, premium shadows — never a flat heavy grey block */

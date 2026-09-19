@@ -7,6 +7,7 @@ import {
   Sparkles,
 } from 'lucide-react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { motion } from 'motion/react';
 import { LEVEL_CODE_TO_LABEL, FIELD_CODE_TO_LABEL } from '@/lib/academic-reference';
 import { CURRENT_ACADEMIC_YEAR_ID } from '@/lib/academic-year';
@@ -84,15 +85,20 @@ export default function DashboardHome() {
 
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-5">
           <div className="space-y-2 max-w-xl">
-            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-white/12 backdrop-blur-md border border-white/20 text-[10px] font-bold text-orange-50">
-              <Sparkles className="w-3 h-3 text-green-200" />
-              <span>Espace Officiel • Session {CURRENT_ACADEMIC_YEAR_ID}</span>
+            <div className="flex items-center gap-2.5">
+              <div className="relative w-9 h-9 bg-white rounded-xl p-1.5 shadow-lg shrink-0">
+                <Image src="/logo-geographie.jpg" alt="Logo Département de Géographie" fill className="object-contain rounded-lg" referrerPolicy="no-referrer" />
+              </div>
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/12 backdrop-blur-md border border-white/20 text-[10px] font-bold text-orange-50">
+                <Sparkles className="w-3 h-3 text-green-200" />
+                <span>Espace Officiel • Session {CURRENT_ACADEMIC_YEAR_ID}</span>
+              </div>
             </div>
-            
-            <h1 className="font-display text-base sm:text-lg lg:text-xl font-bold tracking-tight text-orange-50">
+
+            <h1 className="font-display text-lg sm:text-xl lg:text-2xl font-bold tracking-tight text-orange-50">
               {getGreeting()}, {user.civility ? `${user.civility} ` : ''}{user.firstName ? `${user.firstName} ${user.lastName}` : 'Étudiant'}
             </h1>
-            
+
             <p className="text-xs text-orange-50/85 leading-relaxed font-normal">
               Bienvenue sur votre portail universitaire. Sélectionnez votre niveau d&apos;études ci-dessous pour accéder directement à vos cours, TD et ressources académiques.
             </p>
