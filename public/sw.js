@@ -111,7 +111,6 @@ self.addEventListener('fetch', (event) => {
     request.destination === 'font' ||
     url.pathname.endsWith('.png') ||
     url.pathname.endsWith('.jpg') ||
-    url.pathname.endsWith('.json')
   ) {
     event.respondWith(
       caches.match(request).then((cachedResponse) => {
