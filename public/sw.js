@@ -6,7 +6,6 @@ const CACHE_PAGES_NAME = `pages-${CACHE_VERSION}`;
 // Pre-cache core static assets
 const STATIC_ASSETS_TO_CACHE = [
   '/',
-  '/dashboard',
   '/manifest.json',
   '/LOGO-SITE.png',
   '/logo-ujlog.png',
