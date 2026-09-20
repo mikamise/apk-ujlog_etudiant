@@ -342,6 +342,10 @@ export function Vitrine() {
       <section className="hero" id="top">
         <div className="hero-media" aria-hidden="true"></div>
         <div className="wrap hero-inner">
+          <div className="hero-actions" style={{ marginTop: 0, marginBottom: '24px' }}>
+            <Link href="/login" className="btn btn-outline-light"><i className="fas fa-sign-in-alt"></i> Connexion</Link>
+            <Link href="/register" className="btn btn-orange"><i className="fas fa-user-plus"></i> Inscription</Link>
+          </div>
           <span className="badge-pill reveal"><i className="fas fa-check-circle"></i> Version 1.0</span>
           <h1 className="reveal" style={{ transitionDelay: '.05s' }}>Tous vos cours, TD et résultats,<br /><span>toujours à portée de
               main</span></h1>
