@@ -2,12 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Header } from '@/components/header';
-import { Hero } from '@/components/hero';
-import { AcademicPath } from '@/components/academic-path';
-import { Features } from '@/components/features';
-import { HowItWorksFaq } from '@/components/how-it-works-faq';
-import { Footer } from '@/components/footer';
+import { Vitrine } from '@/components/vitrine/vitrine';
 
 export default function HomePage() {
   const router = useRouter();
@@ -35,16 +30,5 @@ export default function HomePage() {
     return <div className="min-h-screen bg-ujlog-bg" />;
   }
 
-  return (
-    <div className="min-h-screen flex flex-col bg-ujlog-bg">
-      <Header />
-      <main className="flex-1">
-        <Hero />
-        <AcademicPath />
-        <Features />
-        <HowItWorksFaq />
-      </main>
-      <Footer />
-    </div>
-  );
+  return <Vitrine />;
 }

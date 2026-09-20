@@ -79,7 +79,7 @@ export default function SuperAdminLoginPage() {
       <div className="max-w-7xl mx-auto w-full flex items-center justify-between z-10">
         <Link href="/" className="inline-flex items-center gap-2 text-xs font-semibold text-orange-50/80 hover:text-white transition-colors">
           <ArrowLeft className="w-4 h-4 text-orange-50/80" />
-          <span>Retour au portail UJLOG</span>
+          <span>Retour à la page d&apos;accueil</span>
         </Link>
       </div>
 
@@ -262,11 +262,6 @@ export default function SuperAdminLoginPage() {
           </motion.div>
         </div>
       )}
-
-      {/* Footer */}
-      <div className="max-w-7xl mx-auto w-full text-center text-[11px] text-ujlog-ink-soft font-medium z-10">
-        © 2026 Université Jean Lorougnon Guédé • Département de Géographie. Tous droits réservés.
-      </div>
     </div>
   );
 }

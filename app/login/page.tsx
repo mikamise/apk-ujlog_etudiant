@@ -313,10 +313,6 @@ function LoginFormContent() {
           </div>
         </main>
 
-        <footer className="lg:hidden relative z-10 py-4 text-center text-[10px] text-ujlog-ink-soft/70">
-          © 2026 Université Jean Lorougnon Guédé, Département de Géographie. Tous droits réservés.
-        </footer>
-
       </div>
     </div>
   );
