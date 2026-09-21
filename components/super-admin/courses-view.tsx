@@ -453,7 +453,7 @@ export function CoursesView({
                   </div>
                 </div>
 
-                             {selectedCourseForView.documentUrl && (
+                {selectedCourseForView.documentUrl && (
                   <a
                     href={selectedCourseForView.documentUrl}
                     target="_blank"
