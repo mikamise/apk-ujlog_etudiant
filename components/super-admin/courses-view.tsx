@@ -454,7 +454,7 @@ export function CoursesView({
                 </div>
 
                 {selectedCourseForView.documentUrl && (
-                  <a
+                  
                     href={selectedCourseForView.documentUrl}
                     target="_blank"
                     rel="noopener noreferrer"
