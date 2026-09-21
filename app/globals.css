@@ -41,7 +41,7 @@
   --color-ujlog-chip-rose: #e11d48;
 
   --font-display: "Times New Roman", Times, serif;
-  --font-body: "Manrope", ui-sans-serif, system-ui, sans-serif;
+  --font-body: "Inter", ui-sans-serif, system-ui, sans-serif;
 
   /* Soft, premium shadows — never a flat heavy grey block */
   --shadow-glow-orange: 0 10px 22px -14px rgba(224, 102, 0, 0.32);

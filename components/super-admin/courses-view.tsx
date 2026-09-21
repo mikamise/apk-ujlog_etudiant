@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import {
   BookOpen,
   Search,
@@ -19,10 +19,13 @@ import {
 } from 'lucide-react';
 import { CourseItem } from '@/lib/admin-types';
 import { motion, AnimatePresence } from 'motion/react';
+import { LEVEL_LABEL_TO_CODE } from '@/lib/academic-reference';
+import { CURRENT_ACADEMIC_YEAR_ID } from '@/lib/academic-year';
+import { uploadCourseFile, validateCourseFile } from '@/lib/course-upload';
 
 interface CoursesViewProps {
   courses: CourseItem[];
-  onAddCourse?: (courseData: any) => Promise<{ success: boolean; error?: string }> | void;
+  onAddCourse?: (courseData: any) => Promise<{ success: boolean; error?: string; id?: string }> | void;
   onUpdateStatus: (courseId: string, status: 'publié' | 'brouillon' | 'archivé') => void;
   onUpdateMetadata: (courseId: string, updates: Partial<CourseItem>) => Promise<{ success: boolean; error?: string }> | void;
   onDeleteCourse: (courseId: string) => void;
@@ -51,6 +54,7 @@ export function CoursesView({
   const [newTitle, setNewTitle] = useState('');
   const [newType, setNewType] = useState<'CM' | 'TD' | 'TP' | 'Sujet' | 'PV'>('CM');
   const [newLevel, setNewLevel] = useState('Licence 2');
+  const [newFieldCode, setNewFieldCode] = useState('tronc_commun');
   const [newSemestre, setNewSemestre] = useState('Semestre 1');
   const [newMatiere, setNewMatiere] = useState('');
   const [newEnseignant, setNewEnseignant] = useState('');
@@ -59,44 +63,80 @@ export function CoursesView({
   const [uploadedFileName, setUploadedFileName] = useState<string | null>(null);
   const [uploadedFileSize, setUploadedFileSize] = useState<string>('2.4 Mo');
   const [addError, setAddError] = useState<string | null>(null);
+  const [isSubmittingCourse, setIsSubmittingCourse] = useState(false);
+  const newFileRef = useRef<File | null>(null);
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      setUploadedFileName(file.name);
-      const sizeMB = (file.size / (1024 * 1024)).toFixed(1);
-      setUploadedFileSize(`${sizeMB} Mo`);
+    if (!file) return;
+    const validationError = validateCourseFile(file);
+    if (validationError) {
+      setAddError(validationError);
+      return;
     }
+    setAddError(null);
+    newFileRef.current = file;
+    setUploadedFileName(file.name);
+    const sizeMB = (file.size / (1024 * 1024)).toFixed(1);
+    setUploadedFileSize(`${sizeMB} Mo`);
   };
 
   const handleAddSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newTitle.trim() || !newMatiere.trim()) return;
+    setAddError(null);
+    setIsSubmittingCourse(true);
 
-    if (onAddCourse) {
-      // NOTE : ce formulaire ne collecte pas encore l'année universitaire / le semestre /
-      // la filière (identifiants réels requis côté serveur) — voir limitation connue.
-      const result = await onAddCourse({
-        title: newTitle.trim(),
-        subjectName: newMatiere.trim(),
-        type: newType,
-        levelCode: newLevel,
-        teacherName: newEnseignant.trim() || undefined,
-        description: newDescription.trim() || undefined,
-        status: newStatus,
-      });
-      if (result && !result.success) {
-        setAddError(result.error || 'Impossible de créer ce cours. Vérifiez les champs (année universitaire et semestre requis).');
-        return;
+    try {
+      if (onAddCourse) {
+        const levelCode = LEVEL_LABEL_TO_CODE[newLevel];
+        const semesterNumber = newSemestre === 'Semestre 2' ? 2 : 1;
+
+        const result = await onAddCourse({
+          title: newTitle.trim(),
+          subjectName: newMatiere.trim(),
+          type: newType,
+          academicYearId: CURRENT_ACADEMIC_YEAR_ID,
+          semesterNumber,
+          levelCode,
+          fieldCode: newFieldCode,
+          teacherName: newEnseignant.trim() || undefined,
+          description: newDescription.trim() || undefined,
+          status: newStatus,
+        });
+
+        if (result && !result.success) {
+          setAddError(result.error || 'Impossible de créer ce cours. Vérifiez les champs.');
+          setIsSubmittingCourse(false);
+          return;
+        }
+
+        // Fichier réel -> Cloudinary, une fois le cours créé (même flux que côté délégué).
+        if (result?.id && newFileRef.current) {
+          try {
+            await uploadCourseFile(result.id, newFileRef.current);
+          } catch (uploadErr) {
+            setAddError(
+              uploadErr instanceof Error
+                ? `Cours créé, mais le fichier n'a pas pu être envoyé : ${uploadErr.message}`
+                : "Cours créé, mais l'envoi du fichier a échoué."
+            );
+            setIsSubmittingCourse(false);
+            return;
+          }
+        }
       }
-    }
 
-    setShowAddModal(false);
-    setNewTitle('');
-    setNewMatiere('');
-    setNewEnseignant('');
-    setNewDescription('');
-    setUploadedFileName(null);
+      setShowAddModal(false);
+      setNewTitle('');
+      setNewMatiere('');
+      setNewEnseignant('');
+      setNewDescription('');
+      setUploadedFileName(null);
+      newFileRef.current = null;
+    } finally {
+      setIsSubmittingCourse(false);
+    }
   };
 
   // Extract unique matiere options from courses
@@ -683,7 +723,9 @@ export function CoursesView({
                       <option value="Master 2">Master 2</option>
                     </select>
                   </div>
+                </div>
 
+                <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1">
                     <label className="block text-xs font-bold text-ujlog-ink-soft">Semestre</label>
                     <select
@@ -695,7 +737,22 @@ export function CoursesView({
                       <option value="Semestre 2">Semestre 2</option>
                     </select>
                   </div>
+
+                  <div className="space-y-1">
+                    <label className="block text-xs font-bold text-ujlog-ink-soft">Filière</label>
+                    <select
+                      value={newFieldCode}
+                      onChange={(e) => setNewFieldCode(e.target.value)}
+                      className="w-full px-2.5 py-2 bg-ujlog-cream border border-ujlog-border rounded-xl text-xs text-ujlog-ink focus:outline-none focus:ring-2 focus:ring-orange-500/20 font-medium cursor-pointer"
+                    >
+                      <option value="tronc_commun">Tronc commun</option>
+                      <option value="histoire_geographie">Histoire-Géographie</option>
+                      <option value="histoire">Histoire</option>
+                      <option value="geographie">Géographie</option>
+                    </select>
+                  </div>
                 </div>
+              </div>
 
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1">
@@ -762,10 +819,17 @@ export function CoursesView({
                   </button>
                   <button
                     type="submit"
-                    className="flex-1 py-2.5 px-3 bg-orange-800 hover:bg-orange-900 text-white font-bold text-xs rounded-xl shadow-xs cursor-pointer flex items-center justify-center gap-2"
+                    disabled={isSubmittingCourse}
+                    className="flex-1 py-2.5 px-3 bg-orange-800 hover:bg-orange-900 text-white font-bold text-xs rounded-xl shadow-xs cursor-pointer flex items-center justify-center gap-2 disabled:opacity-60"
                   >
-                    <BookOpen className="w-4 h-4 text-orange-200" />
-                    <span>Publier la ressource</span>
+                    {isSubmittingCourse ? (
+                      <span>Publication en cours...</span>
+                    ) : (
+                      <>
+                        <BookOpen className="w-4 h-4 text-orange-200" />
+                        <span>Publier la ressource</span>
+                      </>
+                    )}
                   </button>
                 </div>
               </form>

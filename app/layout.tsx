@@ -1,6 +1,6 @@
 import './globals.css';
 import type { Metadata, Viewport } from 'next';
-import { Space_Grotesk, Manrope } from 'next/font/google';
+import { Space_Grotesk, Inter } from 'next/font/google';
 import { UserProvider } from '@/hooks/use-user';
 import { OfflineBanner } from '@/components/offline-banner';
 import { ServiceWorkerRegister } from '@/components/sw-register';
@@ -13,7 +13,7 @@ const spaceGrotesk = Space_Grotesk({
   display: 'swap',
 });
 
-const manrope = Manrope({
+const inter = Inter({
   subsets: ['latin'],
   weight: ['400', '500', '700', '800'],
   variable: '--font-body',
@@ -52,7 +52,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="fr" className={`h-full ${spaceGrotesk.variable} ${manrope.variable}`}>
+    <html lang="fr" className={`h-full ${spaceGrotesk.variable} ${inter.variable}`}>
       <body className="h-full antialiased font-sans bg-ujlog-bg text-ujlog-ink selection:bg-orange-100 selection:text-ujlog-primary-dark overflow-x-hidden">
         <UserProvider>
           <ServiceWorkerRegister />

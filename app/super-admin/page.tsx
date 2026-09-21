@@ -386,7 +386,7 @@ function mapCourseRowToDelegateCourse(row: any): CourseItem {
 
   // Course Actions
   const handleAddCourseByAdmin = async (courseData: any) => {
-    const result = AdminStore.addCourseByAdmin(courseData);
+    const result = await AdminStore.addCourseByAdmin(courseData);
     loadDashboardData();
     return result;
   };

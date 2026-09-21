@@ -223,11 +223,11 @@ export class AdminStore {
     subjectName: string;
     type?: string;
     academicYearId: string;
-    semesterId: string;
+    semesterNumber: number;
     levelCode: string;
     fieldCode: string;
     teacherName?: string;
-  }, ..._rest: unknown[]): Promise<{ success: boolean; error?: string }> {
+  }, ..._rest: unknown[]): Promise<{ success: boolean; error?: string; id?: string }> {
     try {
       const res = await fetch('/api/courses', {
         method: 'POST',
@@ -235,7 +235,7 @@ export class AdminStore {
         body: JSON.stringify(courseData),
       });
       const data = await res.json();
-      return { success: Boolean(data.success), error: data.error };
+      return { success: Boolean(data.success), error: data.error, id: data.data?.id };
     } catch {
       return { success: false, error: 'Erreur réseau.' };
     }

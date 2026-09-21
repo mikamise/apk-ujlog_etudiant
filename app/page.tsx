@@ -12,12 +12,13 @@ export default function HomePage() {
     const isStandalone =
       window.matchMedia('(display-mode: standalone)').matches ||
       (window.navigator as any).standalone === true;
-    const isMobileViewport = window.innerWidth < 768;
     const hasSeenOnboarding =
       typeof window !== 'undefined' &&
       localStorage.getItem('ujlog_onboarding_done') === 'true';
 
-    if ((isStandalone || isMobileViewport) && !hasSeenOnboarding) {
+    // Onboarding exclusivement pour l'app installée (PWA) sur mobile.
+    // Le web (desktop ET mobile navigateur) affiche directement la vitrine.
+    if (isStandalone && !hasSeenOnboarding) {
       router.replace('/onboarding');
       return;
     }
