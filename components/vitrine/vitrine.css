@@ -1682,3 +1682,240 @@
   .vitrine-root .section-head h2 { font-size: 31px; }
   .vitrine-root .download-inner { padding: 24px 18px; border-radius: 20px; }
 }
+
+/* ============================================================
+   CORRECTIONS FINALES - CONTRASTE / TYPOGRAPHIE / VISIBILITE
+   ============================================================ */
+
+/* Police globale : Inter partout dans la vitrine */
+.vitrine-root,
+.vitrine-root * {
+    font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;
+}
+
+/* Couleurs de référence */
+.vitrine-root {
+    --navy-950: #08152a;
+    --navy-900: #0B2444;
+    --navy-800: #0F3260;
+    --navy-700: #153F78;
+    --orange-500: #F2994A;
+    --orange-600: #E8823A;
+    --ink-900: #0F1E30;
+    --ink-600: #57626F;
+}
+
+/* Titres et textes généraux */
+.vitrine-root h1,
+.vitrine-root h2,
+.vitrine-root h3,
+.vitrine-root h4,
+.vitrine-root strong {
+    color: var(--navy-900);
+}
+
+.vitrine-root p {
+    color: var(--ink-600);
+}
+
+/* ============================================================
+   VITRINE 1 : NOUVEAUX ETUDIANTS / ETUDIANTS DEJA INSCRITS
+   ============================================================ */
+.vitrine-root .dual-card--navy,
+.vitrine-root .dual-card--green {
+    background: #FFFFFF !important;
+    color: var(--navy-900) !important;
+    border: 1px solid rgba(15, 50, 96, 0.14) !important;
+    box-shadow: 0 10px 28px rgba(11, 36, 68, 0.08) !important;
+}
+
+.vitrine-root .dual-card--navy strong,
+.vitrine-root .dual-card--green strong {
+    color: var(--navy-900) !important;
+}
+
+.vitrine-root .dual-card--navy p,
+.vitrine-root .dual-card--green p {
+    color: var(--ink-600) !important;
+}
+
+.vitrine-root .dual-card-eyebrow {
+    color: var(--navy-800) !important;
+}
+
+.vitrine-root .dual-card-eyebrow i {
+    color: var(--navy-800) !important;
+}
+
+/* ============================================================
+   VITRINE 2 : TELECHARGEMENT / CARTES ANDROID + IPHONE
+   ============================================================ */
+.vitrine-root .dl-card {
+    background: #FFFFFF !important;
+    color: var(--navy-900) !important;
+    border: 1px solid #E5E7EB !important;
+    border-radius: 18px !important;
+}
+
+.vitrine-root .dl-card h3 {
+    color: var(--navy-900) !important;
+}
+
+.vitrine-root .dl-card h3 i {
+    color: var(--navy-800) !important;
+}
+
+.vitrine-root .dl-card p {
+    color: var(--ink-600) !important;
+}
+
+.vitrine-root .steps li {
+    color: var(--ink-900) !important;
+}
+
+.vitrine-root .steps li b {
+    color: var(--orange-500) !important;
+}
+
+.vitrine-root .steps li i {
+    color: var(--orange-500) !important;
+}
+
+/* Le QR code reste volontairement blanc */
+.vitrine-root #qr-apk {
+    background: #FFFFFF !important;
+}
+
+/* ============================================================
+   FORMULAIRES : TOUS LES TEXTES RESTENT VISIBLES
+   ============================================================ */
+.vitrine-root .field label {
+    color: var(--navy-800) !important;
+}
+
+.vitrine-root .field input,
+.vitrine-root .field select,
+.vitrine-root .field textarea {
+    color: var(--navy-900) !important;
+    background: #FFFFFF !important;
+    border-color: #DFE3E8 !important;
+    font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;
+}
+
+.vitrine-root .field input::placeholder,
+.vitrine-root .field textarea::placeholder {
+    color: #57626F !important;
+    opacity: 1 !important;
+}
+
+.vitrine-root .field select {
+    color: var(--navy-900) !important;
+}
+
+.vitrine-root .field input:focus,
+.vitrine-root .field select:focus,
+.vitrine-root .field textarea:focus {
+    color: var(--navy-900) !important;
+    border-color: var(--orange-500) !important;
+    box-shadow: 0 0 0 3px rgba(242, 153, 74, 0.14) !important;
+}
+
+/* ============================================================
+   INFORMATIONS DE CONTACT
+   ============================================================ */
+.vitrine-root .contact-info-card,
+.vitrine-root .contact-form {
+    color: var(--ink-900) !important;
+}
+
+.vitrine-root .contact-info-card h3,
+.vitrine-root .contact-form h3 {
+    color: var(--navy-900) !important;
+}
+
+.vitrine-root .contact-info-card p,
+.vitrine-root .contact-info-card span,
+.vitrine-root .contact-channel,
+.vitrine-root .contact-channel span {
+    color: var(--ink-600) !important;
+}
+
+.vitrine-root .contact-channel strong {
+    color: var(--navy-900) !important;
+}
+
+/* ============================================================
+   AVIS / TEXTES DES CARTES
+   ============================================================ */
+.vitrine-root .avis-form,
+.vitrine-root .avis-list {
+    color: var(--ink-900) !important;
+}
+
+.vitrine-root .avis-form h3,
+.vitrine-root .avis-list h3 {
+    color: var(--navy-900) !important;
+}
+
+/* ============================================================
+   FOOTER : TEXTE NET ET LISIBLE
+   ============================================================ */
+.vitrine-root footer,
+.vitrine-root footer p,
+.vitrine-root footer li,
+.vitrine-root footer a {
+    color: var(--ink-600) !important;
+}
+
+.vitrine-root footer strong,
+.vitrine-root .footer-brand strong {
+    color: var(--navy-900) !important;
+}
+
+.vitrine-root footer a:hover {
+    color: var(--orange-600) !important;
+}
+
+/* ============================================================
+   BOUTONS : ORANGE CONSERVE
+   ============================================================ */
+.vitrine-root .btn-orange,
+.vitrine-root .nav-cta {
+    background: var(--orange-500) !important;
+    color: var(--navy-950) !important;
+}
+
+.vitrine-root .btn-orange:hover,
+.vitrine-root .nav-cta:hover {
+    background: var(--orange-600) !important;
+}
+
+/* Boutons bleus */
+.vitrine-root .btn-navy {
+    background: var(--navy-900) !important;
+    color: #FFFFFF !important;
+}
+
+/* ============================================================
+   MOBILE : MEME REGLES DE LISIBILITE
+   ============================================================ */
+@media (max-width: 860px) {
+    .vitrine-root .dual-card--navy,
+    .vitrine-root .dual-card--green,
+    .vitrine-root .dl-card {
+        color: var(--ink-900) !important;
+    }
+
+    .vitrine-root .dual-card--navy strong,
+    .vitrine-root .dual-card--green strong,
+    .vitrine-root .dl-card h3 {
+        color: var(--navy-900) !important;
+    }
+
+    .vitrine-root .dual-card--navy p,
+    .vitrine-root .dual-card--green p,
+    .vitrine-root .dl-card p,
+    .vitrine-root .steps li {
+        color: var(--ink-600) !important;
+    }
+}
