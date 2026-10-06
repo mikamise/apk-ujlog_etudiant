@@ -1,3 +1,4 @@
+import { after } from 'next/server';
 import { NextRequest } from 'next/server';
 import { jsonSuccess, jsonError } from '@/lib/api-response';
 import { getSessionUser, roleAtLeast } from '@/lib/server-session';
@@ -47,14 +48,14 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   const { data, error } = await admin.from('courses').update(update).eq('id', id).select().single();
   if (error || !data) return jsonError('Cours introuvable.', 404, undefined, req);
 
-  let notifiedCount = 0;
   if (isPublishing) {
-    try {
-      const notificationResult = await notifyCoursePublished(admin, data, getAppUrl(req));
-      notifiedCount = notificationResult.notifiedCount;
-    } catch (notificationError) {
-      console.error('[admin/course] notification failed after publication', notificationError);
-    }
+    after(async () => {
+      try {
+        await notifyCoursePublished(admin, data, getAppUrl(req));
+      } catch (notificationError) {
+        console.error('[course-publication] notification failed:', notificationError);
+      }
+    });
   }
 
   await admin.from('audit_logs').insert({
@@ -65,8 +66,8 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     entity_type: 'courses',
     entity_id: id,
     result: 'success',
-    metadata: { ...update, notifiedCount },
+    metadata: update,
   });
 
-  return jsonSuccess(data, { notifiedCount }, 200, req);
+  return jsonSuccess(data, undefined, 200, req);
 }
