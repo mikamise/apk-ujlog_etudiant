@@ -1,4 +1,3 @@
-Dossa Arnaud, [06/10/2026 15:52]
 import { NextRequest, NextResponse } from 'next/server';
 import { jsonSuccess, jsonError } from '@/lib/api-response';
 import { enforceDailyQuota, enforceRateLimit } from '@/lib/rate-limiter';
@@ -28,7 +27,7 @@ async function handleDownload(req: NextRequest, id: string, isGet: boolean) {
 
       return NextResponse.redirect(
         new URL(
-          /login?redirectTo=${encodeURIComponent(url.pathname)},
+          `/login?redirectTo=${encodeURIComponent(url.pathname)}`,
           req.url
         )
       );
@@ -79,12 +78,6 @@ async function handleDownload(req: NextRequest, id: string, isGet: boolean) {
         id: f.id,
         name: f.original_file_name,
         mimeType: f.mime_type,
-
-        // Les anciennes lignes contenant déjà une URL complète
-        // sont conservées telles quelles.
-        //
-        // Pour les nouvelles lignes, on génère une URL Cloudinary
-        // signée sans fl_attachment.
         url: /^https?:\/\//.test(f.storage_key)
           ? f.storage_key
           : buildSignedDeliveryUrl(
@@ -117,8 +110,6 @@ async function handleDownload(req: NextRequest, id: string, isGet: boolean) {
   }
 
   if (course.status === 'published') {
-    // Incrément atomique du compteur de téléchargements.
-    // Repli non atomique si la fonction RPC n'existe pas encore.
     const { error: rpcError } = await admin.rpc(
       'increment_course_download',
       {
@@ -149,18 +140,6 @@ async function handleDownload(req: NextRequest, id: string, isGet: boolean) {
   const accept = req.headers.get('accept') || '';
   const file = files[0];
 
-  /*
-   * GET navigateur :
-   *
-
-Dossa Arnaud, [06/10/2026 15:52]
-* On ne redirige plus directement vers Cloudinary.
-   * La route récupère le fichier côté serveur puis le renvoie
-   * au navigateur avec Content-Disposition: attachment.
-   *
-   * Cela évite notamment le problème 401 lié à fl_attachment
-   * dans l'URL Cloudinary.
-   */
   if (
     isGet &&
     !accept.includes('application/json')
@@ -208,9 +187,9 @@ Dossa Arnaud, [06/10/2026 15:52]
 
     headers.set(
       'Content-Disposition',
-      attachment; filename*=UTF-8''${encodeURIComponent(
+      `attachment; filename*=UTF-8''${encodeURIComponent(
         file.name
-      )}
+      )}`
     );
 
     headers.set(
@@ -231,11 +210,6 @@ Dossa Arnaud, [06/10/2026 15:52]
     });
   }
 
-  /*
-   * POST / requêtes JSON :
-   * On conserve le comportement existant pour les téléchargements
-   * qui consomment l'API directement.
-   */
   return jsonSuccess(
     { files },
     undefined,
@@ -244,10 +218,6 @@ Dossa Arnaud, [06/10/2026 15:52]
   );
 }
 
-/**
- * Incrémente le compteur de téléchargements réel
- * et renvoie les liens signés.
- */
 export async function POST(
   req: NextRequest,
   {
