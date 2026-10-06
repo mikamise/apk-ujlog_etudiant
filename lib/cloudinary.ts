@@ -160,11 +160,6 @@ export async function verifyUploadedResource(
  * URL de livraison SIGNÉE pour un fichier "authenticated" (équivalent de
  * cloudinary.url(publicId, { sign_url: true, type: 'authenticated' }) du SDK).
  *
- * Pour les téléchargements, on utilise volontairement attachment:false et on
- * applique Content-Disposition sur notre route serveur. Cela évite d'ajouter
- * une transformation fl_attachment à l'URL signée et conserve la même URL
- * signée que celle utilisée pour la vérification HEAD après upload.
- *
  * - Sans la clé secrète, impossible de construire l'URL à partir du seul
  *   public_id : lire `course_files.storage_key` ne suffit plus pour télécharger.
  * - L'URL n'est remise qu'à un utilisateur connecté (/api/courses/[id]/download).
@@ -190,4 +185,59 @@ export function buildSignedDeliveryUrl(
     .substring(0, 8);
   const deliveryType = options.deliveryType ?? COURSE_FILE_DELIVERY_TYPE;
   return `https://res.cloudinary.com/${cloudName}/${resourceType}/${deliveryType}/s--${signature}--/${toSign}`;
+}
+
+
+/**
+ * Génère l'URL de téléchargement temporaire recommandée par Cloudinary
+ * pour les ressources privées/authenticated. Cette URL est signée côté
+ * serveur et expire après une heure.
+ */
+export function buildPrivateDownloadUrl(
+  publicId: string,
+  format: string,
+  resourceType: 'image' | 'raw',
+  options: {
+    deliveryType?: string;
+    expiresInSeconds?: number;
+    attachment?: boolean;
+  } = {}
+): string {
+  const { cloudName, apiKey, apiSecret } = cloudinaryCredentials();
+  const timestamp = Math.floor(Date.now() / 1000);
+  const expiresAt = timestamp + (options.expiresInSeconds ?? 3600);
+  const deliveryType = options.deliveryType ?? COURSE_FILE_DELIVERY_TYPE;
+  const attachment = options.attachment ?? true;
+
+  const params: Record<string, string | number | boolean> = {
+    timestamp,
+    public_id: publicId,
+    format,
+    type: deliveryType,
+    attachment,
+    expires_at: expiresAt,
+  };
+
+  const toSign = Object.keys(params)
+    .sort()
+    .map((key) => `${key}=${String(params[key]).replace(/&/g, '%26')}`)
+    .join('&');
+
+  const signature = crypto
+    .createHash('sha1')
+    .update(toSign + apiSecret, 'utf8')
+    .digest('hex');
+
+  const query = new URLSearchParams({
+    timestamp: String(timestamp),
+    public_id: publicId,
+    format,
+    type: deliveryType,
+    attachment: String(attachment),
+    expires_at: String(expiresAt),
+    signature,
+    api_key: apiKey,
+  });
+
+  return `https://api.cloudinary.com/v1_1/${cloudName}/${resourceType}/download?${query.toString()}`;
 }
