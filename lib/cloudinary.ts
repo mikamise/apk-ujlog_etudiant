@@ -160,6 +160,11 @@ export async function verifyUploadedResource(
  * URL de livraison SIGNÉE pour un fichier "authenticated" (équivalent de
  * cloudinary.url(publicId, { sign_url: true, type: 'authenticated' }) du SDK).
  *
+ * Pour les téléchargements, on utilise volontairement attachment:false et on
+ * applique Content-Disposition sur notre route serveur. Cela évite d'ajouter
+ * une transformation fl_attachment à l'URL signée et conserve la même URL
+ * signée que celle utilisée pour la vérification HEAD après upload.
+ *
  * - Sans la clé secrète, impossible de construire l'URL à partir du seul
  *   public_id : lire `course_files.storage_key` ne suffit plus pour télécharger.
  * - L'URL n'est remise qu'à un utilisateur connecté (/api/courses/[id]/download).
