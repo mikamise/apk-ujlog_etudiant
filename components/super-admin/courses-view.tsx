@@ -40,7 +40,7 @@ interface CoursesViewProps {
   onUpdateStatus: (
     courseId: string,
     status: 'publié' | 'brouillon' | 'archivé'
-  ) => void;
+  ) => Promise<{ success: boolean; error?: string }>;
   onUpdateMetadata: (
     courseId: string,
     updates: Partial<CourseItem>
@@ -212,6 +212,22 @@ export function CoursesView({
             setIsSubmittingCourse(false);
             return;
           }
+
+          if (newStatus === 'published') {
+            const publishResult = await onUpdateStatus(result.id, 'publié');
+            if (!publishResult.success) {
+              setAddError(
+                publishResult.error ||
+                  'Le cours a été créé et le fichier envoyé, mais la publication a échoué.'
+              );
+              setIsSubmittingCourse(false);
+              return;
+            }
+          }
+        } else if (result?.id && newStatus === 'published') {
+          setAddError('Ajoutez un fichier avant de publier le cours.');
+          setIsSubmittingCourse(false);
+          return;
         }
       }
 
@@ -661,12 +677,12 @@ export function CoursesView({
                     {isPublished ? (
                       <button
                         type="button"
-                        onClick={() =>
-                          onUpdateStatus(
-                            c.id,
-                            'brouillon'
-                          )
-                        }
+                        onClick={async () => {
+                          const result = await onUpdateStatus(c.id, 'brouillon');
+                          if (!result.success) {
+                            setAddError(result.error || 'La modification du statut a échoué.');
+                          }
+                        }}
                         className="px-2.5 py-1.5 bg-ujlog-secondary-50 hover:bg-ujlog-secondary-100 text-ujlog-secondary-dark font-bold text-[10px] rounded-lg cursor-pointer"
                       >
                         Dépublier
@@ -674,12 +690,12 @@ export function CoursesView({
                     ) : (
                       <button
                         type="button"
-                        onClick={() =>
-                          onUpdateStatus(
-                            c.id,
-                            'publié'
-                          )
-                        }
+                        onClick={async () => {
+                          const result = await onUpdateStatus(c.id, 'publié');
+                          if (!result.success) {
+                            setAddError(result.error || 'La publication a échoué.');
+                          }
+                        }}
                         className="px-2.5 py-1.5 bg-ujlog-primary-dark hover:brightness-105 text-white font-bold text-[10px] rounded-lg cursor-pointer"
                       >
                         Publier
