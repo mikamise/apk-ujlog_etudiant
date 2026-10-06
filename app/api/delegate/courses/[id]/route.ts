@@ -116,18 +116,22 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
   let notifiedCount = 0;
   if (isPublishing) {
-    const result = await notifyCoursePublished(
-      admin,
-      {
-        id: data.id,
-        title: data.title,
-        subject_name: data.subject_name,
-        level_code: data.level_code,
-        field_code: data.field_code,
-      },
-      getAppUrl(req)
-    );
-    notifiedCount = result.notifiedCount;
+    try {
+      const result = await notifyCoursePublished(
+        admin,
+        {
+          id: data.id,
+          title: data.title,
+          subject_name: data.subject_name,
+          level_code: data.level_code,
+          field_code: data.field_code,
+        },
+        getAppUrl(req)
+      );
+      notifiedCount = result.notifiedCount;
+    } catch (notificationError) {
+      console.error('[delegate/course] notification failed after publication', notificationError);
+    }
   }
 
   await admin.from('audit_logs').insert({
