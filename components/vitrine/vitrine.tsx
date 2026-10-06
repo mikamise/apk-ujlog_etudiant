@@ -780,6 +780,7 @@ export function Vitrine() {
             <i className="fas fa-code" style={{ color: 'var(--orange-500)' }}></i>
             Créé par <strong style={{ color: '#fff', fontWeight: '700' }}>Dossa Bossou Arnaud</strong>
             <span style={{ color: 'rgba(255,255,255,0.4)' }}></span>
+            
             Étudiant au Département de Géographie UJLoG Daloa
           </p>
           <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.4)', marginTop: '6px' }}>
