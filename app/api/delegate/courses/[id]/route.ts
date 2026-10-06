@@ -1,3 +1,4 @@
+import { after } from 'next/server';
 import { NextRequest } from 'next/server';
 import { z } from 'zod';
 import { jsonSuccess, jsonError } from '@/lib/api-response';
@@ -114,24 +115,24 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
   if (error || !data) return jsonError('Modification impossible.', 500, undefined, req);
 
-  let notifiedCount = 0;
   if (isPublishing) {
-    try {
-      const result = await notifyCoursePublished(
-        admin,
-        {
-          id: data.id,
-          title: data.title,
-          subject_name: data.subject_name,
-          level_code: data.level_code,
-          field_code: data.field_code,
-        },
-        getAppUrl(req)
-      );
-      notifiedCount = result.notifiedCount;
-    } catch (notificationError) {
-      console.error('[delegate/course] notification failed after publication', notificationError);
-    }
+    after(async () => {
+      try {
+        await notifyCoursePublished(
+          admin,
+          {
+            id: data.id,
+            title: data.title,
+            subject_name: data.subject_name,
+            level_code: data.level_code,
+            field_code: data.field_code,
+          },
+          getAppUrl(req)
+        );
+      } catch (notificationError) {
+        console.error('[course-publication] notification failed:', notificationError);
+      }
+    });
   }
 
   await admin.from('audit_logs').insert({
@@ -143,10 +144,10 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     entity_id: course.id,
     target_summary: data.title,
     result: 'success',
-    metadata: { fields: Object.keys(update), notifiedCount },
+    metadata: { fields: Object.keys(update), notificationDeferred: isPublishing },
   });
 
-  return jsonSuccess(data, { notifiedCount }, 200, req);
+  return jsonSuccess(data, undefined, 200, req);
 }
 
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
