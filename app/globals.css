@@ -1,0 +1,106 @@
+@import "tailwindcss";
+
+@theme {
+  /* Primary: premium vivid orange (brand CTA / active state) */
+  --color-ujlog-primary: #ff7a00;
+  --color-ujlog-primary-dark: #e06600;
+  --color-ujlog-primary-deep: #b34f00;
+  --color-ujlog-primary-mid: #ff8f24;
+  --color-ujlog-primary-light: #fff1e0;
+  --color-ujlog-primary-100: #ffe2bf;
+
+  /* Secondary: green, echoes the UJLOG crest */
+  --color-ujlog-secondary: #16a34a;
+  --color-ujlog-secondary-dark: #0f7a37;
+  --color-ujlog-secondary-light: #86efac;
+  --color-ujlog-secondary-50: #f0fdf4;
+  --color-ujlog-secondary-100: #dcfce7;
+
+  --color-ujlog-gold: #f59e0b;
+
+  /* Warm neutrals */
+  --color-ujlog-ink: #221a12;
+  --color-ujlog-ink-soft: #7a6f61;
+  --color-ujlog-cream: #faf9f7;
+  --color-ujlog-cream-2: #ffffff;
+  --color-ujlog-border: #ede2d3;
+  --color-ujlog-bg: #ffffff;
+  --color-ujlog-light: #f0fdf4;
+
+  /* Status */
+  --color-ujlog-error: #dc2626;
+  --color-ujlog-error-light: #fef2f2;
+  --color-ujlog-success: #16a34a;
+  --color-ujlog-warning: #f59e0b;
+
+  /* Subject accent chips (rotating palette for matières/documents) */
+  --color-ujlog-chip-orange: #ff7a00;
+  --color-ujlog-chip-green: #16a34a;
+  --color-ujlog-chip-blue: #2563eb;
+  --color-ujlog-chip-purple: #7c3aed;
+  --color-ujlog-chip-rose: #e11d48;
+
+  --font-display: var(--font-body), ui-sans-serif, system-ui, sans-serif;
+  --font-body: "Inter", ui-sans-serif, system-ui, sans-serif;
+
+  /* Soft, premium shadows — never a flat heavy grey block */
+  --shadow-glow-orange: 0 10px 22px -14px rgba(224, 102, 0, 0.32);
+  --shadow-glow-green: 0 12px 26px -12px rgba(22, 163, 74, 0.32);
+  --shadow-soft: 0 1px 2px rgba(34, 26, 18, 0.04), 0 10px 24px -14px rgba(34, 26, 18, 0.14);
+  --shadow-card-hover: 0 4px 10px -2px rgba(34, 26, 18, 0.06), 0 16px 30px -14px rgba(34, 26, 18, 0.18);
+}
+
+@layer base {
+  body {
+    background-color: var(--color-ujlog-bg);
+    color: var(--color-ujlog-ink);
+    font-family: var(--font-body);
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-display);
+    letter-spacing: -0.02em;
+  }
+}
+
+@layer utilities {
+  /* Hero / CTA gradient — vivid orange, kept light enough to stay premium, not a dark-brown wash */
+  /* Zone orange = orange clair uni (plus de dégradé), contraste accessible avec le texte blanc,
+     couleur volontairement moins vive que le orange de marque pur (#ff7a00) — Phase 3 §7. */
+  .bg-terracotta-gradient {
+    background: var(--color-ujlog-primary-dark);
+  }
+  .shadow-glow-orange { box-shadow: var(--shadow-glow-orange); }
+  .shadow-glow-green { box-shadow: var(--shadow-glow-green); }
+  .shadow-soft-warm { box-shadow: var(--shadow-soft); }
+  .shadow-card-hover { box-shadow: var(--shadow-card-hover); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--color-ujlog-primary) 55%, white);
+  outline-offset: 3px;
+}
+
+button,
+a,
+input,
+select,
+textarea {
+  -webkit-tap-highlight-color: transparent;
+}
+
+@supports (padding: env(safe-area-inset-bottom)) {
+  .safe-area-bottom { padding-bottom: max(0.75rem, env(safe-area-inset-bottom)); }
+  .safe-area-top { padding-top: max(0.75rem, env(safe-area-inset-top)); }
+}
