@@ -48,7 +48,7 @@ async function handleDownload(req: NextRequest, id: string, isGet: boolean) {
         // Sinon : URL de livraison signée, avec le bon resource_type (image ou raw).
         url: /^https?:\/\//.test(f.storage_key)
           ? f.storage_key
-          : buildSignedDeliveryUrl(f.storage_key, resourceTypeForMime(f.mime_type)),
+          : buildSignedDeliveryUrl(f.storage_key, resourceTypeForMime(f.mime_type), { attachment: false }),
       }));
   } catch {
     return jsonError('Service de stockage indisponible.', 503, undefined, req);
@@ -77,7 +77,45 @@ async function handleDownload(req: NextRequest, id: string, isGet: boolean) {
 
   const accept = req.headers.get('accept') || '';
   if (isGet && !accept.includes('application/json') && files[0]?.url) {
-    return NextResponse.redirect(files[0].url);
+    const file = files[0];
+
+    try {
+      // On récupère le fichier côté serveur avec l'URL signée sans
+      // transformation fl_attachment. La route renvoie ensuite les octets
+      // avec Content-Disposition: attachment, sans exposer l'URL Cloudinary.
+      const upstream = await fetch(file.url, {
+        cache: 'no-store',
+        redirect: 'follow',
+      });
+
+      if (!upstream.ok || !upstream.body) {
+        const cloudinaryError = upstream.headers.get('x-cld-error');
+        console.error('[course-download] Cloudinary download failed:', {
+          status: upstream.status,
+          error: cloudinaryError,
+          courseId: id,
+          fileId: file.id,
+        });
+        return jsonError(
+          cloudinaryError || 'Le fichier est temporairement indisponible.',
+          upstream.status === 401 || upstream.status === 403 ? 502 : 503,
+          undefined,
+          req
+        );
+      }
+
+      const headers = new Headers();
+      headers.set('Content-Type', file.mimeType || upstream.headers.get('content-type') || 'application/octet-stream');
+      headers.set('Content-Disposition', `attachment; filename*=UTF-8''${encodeURIComponent(file.name)}`);
+      headers.set('Cache-Control', 'private, no-store, max-age=0');
+      const contentLength = upstream.headers.get('content-length');
+      if (contentLength) headers.set('Content-Length', contentLength);
+
+      return new NextResponse(upstream.body, { status: 200, headers });
+    } catch (error) {
+      console.error('[course-download] Cloudinary request failed:', error);
+      return jsonError('Le téléchargement est temporairement indisponible.', 503, undefined, req);
+    }
   }
 
   return jsonSuccess({ files }, undefined, 200, req);
