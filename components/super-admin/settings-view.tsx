@@ -60,9 +60,15 @@ export function SettingsView() {
             </div>
 
             <div className="p-3 bg-ujlog-cream rounded-2xl border border-ujlog-border space-y-1">
+<<<<<<< HEAD
               <span className="font-bold text-ujlog-primary text-xs block">Département de Géographie</span>
               <p className="text-[11px] text-ujlog-ink-soft/60">
                 UFR des Sciences Sociales — Département de Géographie (UJLOG), Daloa.
+=======
+              <span className="font-bold text-ujlog-primary text-xs block">UFR SSH</span>
+              <p className="text-[11px] text-ujlog-ink-soft/60">
+                UFR SSH — Université Jean Lorougnon Guédé, Daloa.
+>>>>>>> master
               </p>
             </div>
           </div>

@@ -129,7 +129,11 @@ export default function SuperAdminLoginPage() {
           <div className="text-center space-y-2.5">
             <div className="flex items-center justify-center mb-1">
               <div className="relative w-16 h-16 bg-white rounded-2xl p-2.5 border border-ujlog-border shadow-soft-warm">
+<<<<<<< HEAD
                 <Image src="/logo-geographie.jpg" alt="Logo Département de Géographie" fill className="object-contain rounded-xl" referrerPolicy="no-referrer" />
+=======
+                <Image src="/logo-geographie.jpg" alt="Logo UFR SSH" fill className="object-contain rounded-xl" referrerPolicy="no-referrer" />
+>>>>>>> master
               </div>
             </div>
             <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-orange-100/90 text-ujlog-primary-dark rounded-full text-[10px] font-black uppercase tracking-widest border border-orange-300">

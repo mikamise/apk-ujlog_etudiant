@@ -30,6 +30,12 @@ export function OverviewView({
   onNavigateTab,
   onOpenAddDelegate
 }: OverviewViewProps) {
+<<<<<<< HEAD
+=======
+  const visibleStats = stats;
+  const visibleLogs = recentLogs;
+
+>>>>>>> master
   const statCards: {
     title: string;
     value: string;
@@ -40,7 +46,11 @@ export function OverviewView({
   }[] = [
     {
       title: 'Nombre total d’étudiants',
+<<<<<<< HEAD
       value: stats.totalStudents.toLocaleString('fr-FR'),
+=======
+      value: visibleStats.totalStudents.toLocaleString('fr-FR'),
+>>>>>>> master
       sub: 'Comptes actifs sur la plateforme',
       icon: Users,
       accent: 'orange',
@@ -48,7 +58,11 @@ export function OverviewView({
     },
     {
       title: 'Nombre de Délégués',
+<<<<<<< HEAD
       value: stats.totalDelegates.toLocaleString('fr-FR'),
+=======
+      value: visibleStats.totalDelegates.toLocaleString('fr-FR'),
+>>>>>>> master
       sub: 'Délégués de filières et niveaux',
       icon: UserCheck,
       accent: 'green',
@@ -56,7 +70,11 @@ export function OverviewView({
     },
     {
       title: 'Nombre de cours',
+<<<<<<< HEAD
       value: stats.totalCourses.toLocaleString('fr-FR'),
+=======
+      value: visibleStats.totalCourses.toLocaleString('fr-FR'),
+>>>>>>> master
       sub: 'Supports CM, TD, Sujets & PVs',
       icon: BookOpen,
       accent: 'orange',
@@ -64,7 +82,11 @@ export function OverviewView({
     },
     {
       title: 'Publications récentes',
+<<<<<<< HEAD
       value: stats.recentPublicationsCount.toLocaleString('fr-FR'),
+=======
+      value: visibleStats.recentPublicationsCount.toLocaleString('fr-FR'),
+>>>>>>> master
       sub: 'Ressources validées cette semaine',
       icon: Send,
       accent: 'green',
@@ -165,13 +187,21 @@ export function OverviewView({
             </button>
           </div>
 
+<<<<<<< HEAD
           {recentLogs.length === 0 ? (
+=======
+          {visibleLogs.length === 0 ? (
+>>>>>>> master
             <div className="py-8 text-center text-xs text-ujlog-ink-soft">
               Aucune activité récente enregistrée.
             </div>
           ) : (
             <div className="space-y-3">
+<<<<<<< HEAD
               {recentLogs.slice(0, 6).map((log) => (
+=======
+              {visibleLogs.slice(0, 6).map((log) => (
+>>>>>>> master
                 <div
                   key={log.id}
                   className="p-3 bg-ujlog-cream/70 border border-ujlog-border rounded-2xl flex items-start justify-between gap-3 text-xs"

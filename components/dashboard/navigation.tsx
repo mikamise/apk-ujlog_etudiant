@@ -23,6 +23,10 @@ import {
   MoreHorizontal,
   X,
   FolderDown,
+<<<<<<< HEAD
+=======
+  Settings,
+>>>>>>> master
 } from 'lucide-react';
 import { CURRENT_ACADEMIC_YEAR_ID } from '@/lib/academic-year';
 
@@ -48,7 +52,11 @@ export function DashboardNavigation() {
   ];
 
   // La sidebar desktop garde tout visible directement (pas besoin du tiroir).
+<<<<<<< HEAD
   const sidebarNavItems = [...navItems, { label: 'Mon Profil', href: '/dashboard/profil', icon: UserRound }];
+=======
+  const sidebarNavItems = [...navItems, { label: 'Mon Profil', href: '/dashboard/profil', icon: UserRound }, { label: 'Paramètres', href: '/dashboard/parametres', icon: Settings }];
+>>>>>>> master
 
   const moreItems = [
     { label: 'Mon Profil', href: '/dashboard/profil', icon: UserRound },
@@ -56,6 +64,10 @@ export function DashboardNavigation() {
     ...(canAccessDelegateSpace ? [{ label: 'Espace délégué', href: '/dashboard/delegue', icon: ShieldCheck }] : []),
     ...(canAccessAdminSpace ? [{ label: 'Administration', href: '/super-admin', icon: KeyRound }] : []),
     { label: 'Archives', href: '/dashboard/archives', icon: Archive },
+<<<<<<< HEAD
+=======
+    { label: 'Paramètres', href: '/dashboard/parametres', icon: Settings },
+>>>>>>> master
     { label: 'Support', href: '#support', icon: LifeBuoy, action: () => setIsContactModalOpen(true) },
   ];
 
@@ -75,8 +87,13 @@ export function DashboardNavigation() {
           <Link href="/dashboard" className="flex items-center gap-3 px-2 py-2 rounded-xl hover:bg-ujlog-cream transition-colors">
             <div className="relative w-11 h-11 bg-white rounded-2xl p-1.5 shadow-soft-warm border border-ujlog-border shrink-0">
               <Image
+<<<<<<< HEAD
                 src="/logo-geographie.jpg"
                 alt="Logo Département de Géographie"
+=======
+                src="/icon-ssh.svg"
+                alt="Logo UFR SSH"
+>>>>>>> master
                 fill
                 className="object-contain rounded-xl"
                 referrerPolicy="no-referrer"
@@ -247,7 +264,11 @@ export function DashboardNavigation() {
       <header className="lg:hidden sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-ujlog-border px-4 py-3 flex items-center justify-between shadow-2xs">
         <Link href="/dashboard" className="flex items-center gap-2.5 min-h-[44px]">
           <div className="relative w-10 h-10 bg-white rounded-2xl p-1.5 shadow-soft-warm border border-ujlog-border shrink-0">
+<<<<<<< HEAD
             <Image src="/logo-geographie.jpg" alt="Logo Département de Géographie" fill className="object-contain rounded-xl" referrerPolicy="no-referrer" />
+=======
+            <Image src="/icon-ssh.svg" alt="Logo UFR SSH" fill className="object-contain rounded-xl" referrerPolicy="no-referrer" />
+>>>>>>> master
           </div>
           <div className="flex flex-col">
             <span className="font-display font-bold text-sm text-ujlog-ink tracking-tight leading-tight">UJLOG Étudiant</span>

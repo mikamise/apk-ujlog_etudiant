@@ -52,7 +52,11 @@ export default function ProfilPage() {
     level: currentLevelLabel,
     field: currentFieldLabel,
     academicYear: user.academicYear || CURRENT_ACADEMIC_YEAR_ID,
+<<<<<<< HEAD
     studentId: user.studentId || 'UJLOG-2026-0842',
+=======
+    studentId: user.studentId || '',
+>>>>>>> master
   });
 
   const nextLevelCode = getNextLevel(currentLevelCode);
@@ -284,7 +288,12 @@ export default function ProfilPage() {
               type="file" 
               ref={fileInputRef} 
               onChange={handleFileChange} 
+<<<<<<< HEAD
               accept="image/*" 
+=======
+              accept="image/*"
+              capture="user"
+>>>>>>> master
               className="hidden" 
             />
           </div>
@@ -479,7 +488,11 @@ export default function ProfilPage() {
         <div className="bg-ujlog-cream rounded-xl p-3.5 border border-ujlog-border flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
           <div className="flex items-center gap-2 text-ujlog-ink-soft">
             <Building2 className="w-4 h-4 text-ujlog-primary-dark shrink-0" />
+<<<<<<< HEAD
             <span className="font-semibold">Département de Géographie • Daloa (Côte d&apos;Ivoire)</span>
+=======
+            <span className="font-semibold">UFR SSH • Daloa (Côte d&apos;Ivoire)</span>
+>>>>>>> master
           </div>
           <span className="text-[11px] text-ujlog-ink-soft/60 font-medium">UFR Sciences Sociales</span>
         </div>

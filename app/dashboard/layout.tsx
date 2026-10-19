@@ -4,6 +4,10 @@ import { useUser } from '@/hooks/use-user';
 import { DashboardNavigation } from '@/components/dashboard/navigation';
 import Link from 'next/link';
 import { ShieldAlert, ArrowRight, UserPlus, LogIn, WifiOff } from 'lucide-react';
+<<<<<<< HEAD
+=======
+import { NotificationPopups } from '@/components/dashboard/notification-popups';
+>>>>>>> master
 
 export default function DashboardLayout({
   children,
@@ -76,6 +80,11 @@ export default function DashboardLayout({
   }
 
   return (
+<<<<<<< HEAD
+=======
+    <>
+    <NotificationPopups />
+>>>>>>> master
     <div className="min-h-screen bg-ujlog-bg flex flex-col lg:flex-row w-full overflow-x-hidden pb-16 lg:pb-0">
       <DashboardNavigation />
       <main className="flex-1 flex flex-col min-w-0">
@@ -88,5 +97,9 @@ export default function DashboardLayout({
         {children}
       </main>
     </div>
+<<<<<<< HEAD
+=======
+    </>
+>>>>>>> master
   );
 }

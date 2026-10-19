@@ -160,8 +160,12 @@ export default function DashboardHome() {
         ].some((value) =>
           value.toLowerCase().includes(q)
         );
+<<<<<<< HEAD
       })
       .slice(0, 8);
+=======
+      });
+>>>>>>> master
   }, [courses, levelFilter, query]);
 
   const currentLevel = user.level?.toLowerCase();
@@ -188,8 +192,13 @@ export default function DashboardHome() {
             <div className="flex items-center gap-3">
               <div className="relative h-10 w-10 overflow-hidden rounded-2xl border border-orange-100 bg-white p-1.5">
                 <Image
+<<<<<<< HEAD
                   src="/logo-geographie.jpg"
                   alt="UJLOG"
+=======
+                  src="/icon-ssh.svg"
+                  alt="UJLoG Étudiant · UFR SSH"
+>>>>>>> master
                   fill
                   className="object-contain"
                   referrerPolicy="no-referrer"

@@ -109,3 +109,14 @@ Date : 2026-10-06
 - [x] Vérification syntaxique du Service Worker réussie.
 - [ ] Installation propre des dépendances et `next build` de production : à valider dans un environnement où l'installation npm peut aboutir.
 - [ ] QA navigateur réelle mobile/desktop et tests des flux Supabase avec variables d'environnement de production.
+<<<<<<< HEAD
+=======
+
+
+## Mise à jour du 19 octobre 2026 — refonte Telegram incrémentale
+
+- Tableau de bord étudiant : retrait du plafond d'affichage de huit éléments après filtrage. La pagination serveur et les protections anti-abus restent actives.
+- Icône de portail du tableau de bord alignée sur l'identité UFR SSH sans supprimer les filières et disciplines existantes.
+- Rapport détaillé : `REFONTE_INTEGRALE_TRAVAIL.md`.
+- Vérification : installation des dépendances interrompue par une expiration de l'environnement ; ESLint/build n'ont donc pas pu être exécutés. Ne pas présenter cette archive comme testée en production.
+>>>>>>> master

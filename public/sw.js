@@ -1,5 +1,9 @@
 // UJLOG Étudiants - Service Worker PWA
+<<<<<<< HEAD
 const CACHE_VERSION = 'ujlog-etudiants-v3.0.0';
+=======
+const CACHE_VERSION = 'ujlog-etudiants-v3.1.0';
+>>>>>>> master
 const CACHE_STATIC_NAME = `static-${CACHE_VERSION}`;
 const CACHE_PAGES_NAME = `pages-${CACHE_VERSION}`;
 const USER_DOWNLOADS_CACHE_NAME = 'ujlog-course-files-v1';
@@ -139,3 +143,39 @@ self.addEventListener('fetch', (event) => {
 
   if (url.pathname.startsWith('/api/')) return;
 });
+<<<<<<< HEAD
+=======
+
+
+// Notifications système envoyées par le serveur via Web Push (si configuré).
+self.addEventListener('push', (event) => {
+  let data = {};
+  try { data = event.data ? event.data.json() : {}; } catch { data = { body: event.data?.text() || '' }; }
+  const title = typeof data.title === 'string' ? data.title : 'UJLOG Étudiant';
+  const options = {
+    body: typeof data.body === 'string' ? data.body : 'Une nouvelle information universitaire est disponible.',
+    icon: '/icon-192.png',
+    badge: '/icon-192.png',
+    tag: typeof data.tag === 'string' ? data.tag : undefined,
+    data: { url: typeof data.url === 'string' && data.url.startsWith('/') ? data.url : '/dashboard/notifications' },
+    renotify: false,
+  };
+  event.waitUntil(self.registration.showNotification(title, options));
+});
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const target = event.notification.data?.url;
+  const url = typeof target === 'string' && target.startsWith('/') ? new URL(target, self.location.origin).href : new URL('/dashboard/notifications', self.location.origin).href;
+  event.waitUntil((async () => {
+    const windows = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+    for (const client of windows) {
+      if ('focus' in client) {
+        if ('navigate' in client) await client.navigate(url);
+        return client.focus();
+      }
+    }
+    if (self.clients.openWindow) return self.clients.openWindow(url);
+  })());
+});
+>>>>>>> master

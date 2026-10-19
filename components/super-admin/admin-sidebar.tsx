@@ -70,7 +70,11 @@ export function AdminSidebar({
       <div className="p-4 border-b border-ujlog-border flex items-center justify-between bg-ujlog-cream/50">
         <div className="flex items-center gap-2.5">
           <div className="relative w-10 h-10 bg-white rounded-2xl p-1.5 border border-ujlog-border shadow-soft-warm shrink-0">
+<<<<<<< HEAD
             <Image src="/logo-geographie.jpg" alt="Logo Département de Géographie" fill className="object-contain rounded-xl" referrerPolicy="no-referrer" />
+=======
+            <Image src="/logo-geographie.jpg" alt="Logo UFR SSH" fill className="object-contain rounded-xl" referrerPolicy="no-referrer" />
+>>>>>>> master
           </div>
           <div className="flex flex-col">
             <span className="font-display text-sm font-bold text-ujlog-ink tracking-tight">

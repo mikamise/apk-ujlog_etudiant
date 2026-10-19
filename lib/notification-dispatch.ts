@@ -85,6 +85,33 @@ export async function notifyStudentsInScope(
   }));
   const { data: inserted } = await admin.from('notifications').insert(notifications).select('id, user_id');
 
+<<<<<<< HEAD
+=======
+  // Envoi Web Push en arrière-plan lorsque les clés VAPID sont configurées.
+  // Les abonnements expirés sont supprimés ; les échecs push ne bloquent jamais la publication du cours.
+  if (inserted?.length && process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY && process.env.VAPID_SUBJECT) {
+    after(async () => {
+      try {
+        const webpush = require('web-push');
+        webpush.setVapidDetails(process.env.VAPID_SUBJECT, process.env.VAPID_PUBLIC_KEY, process.env.VAPID_PRIVATE_KEY);
+        const ids = [...new Set((inserted as { user_id: string }[]).map((n) => n.user_id))];
+        for (let i = 0; i < ids.length; i += 500) {
+          const batch = ids.slice(i, i + 500);
+          const { data: subscriptions, error } = await admin.from('push_subscriptions').select('id,user_id,endpoint,p256dh,auth').in('user_id', batch);
+          if (error || !subscriptions?.length) continue;
+          const notifByUser = new Map((inserted as { id: string; user_id: string }[]).map((n) => [n.user_id, n.id]));
+          await Promise.allSettled(subscriptions.map(async (sub: { id: string; user_id: string; endpoint: string; p256dh: string; auth: string }) => {
+            const notifId = notifByUser.get(sub.user_id);
+            const payload = JSON.stringify({ title: params.title, body: params.message, tag: notifId ? `ujlog-${notifId}` : 'ujlog-notification', url: params.reference?.course_id ? `/dashboard/cours/${encodeURIComponent(String(params.reference.course_id))}` : '/dashboard/notifications' });
+            try { await webpush.sendNotification({ endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } }, payload, { TTL: 60 * 60 * 24 }); }
+            catch (err) { const status = (err as { statusCode?: number })?.statusCode; if (status === 404 || status === 410) await admin.from('push_subscriptions').delete().eq('id', sub.id); }
+          }));
+        }
+      } catch (err) { console.error('[notification-dispatch] Web Push indisponible :', err); }
+    });
+  }
+
+>>>>>>> master
   // 2. File d'attente d'emails — uniquement pour ceux qui les ont activés,
   //    jamais d'envoi direct ici (voir lib/email.ts + le worker de traitement).
   if (params.emailTemplate) {
