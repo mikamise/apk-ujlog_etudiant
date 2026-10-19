@@ -1,0 +1,201 @@
+@import "tailwindcss";
+
+@theme {
+  /* Primary: premium vivid orange (brand CTA / active state) */
+  --color-ujlog-primary: #ff7a00;
+  --color-ujlog-primary-dark: #e06600;
+  --color-ujlog-primary-deep: #b34f00;
+  --color-ujlog-primary-mid: #ff8f24;
+  --color-ujlog-primary-light: #fff1e0;
+  --color-ujlog-primary-100: #ffe2bf;
+
+  /* Secondary: green, echoes the UJLOG crest */
+  --color-ujlog-secondary: #16a34a;
+  --color-ujlog-secondary-dark: #0f7a37;
+  --color-ujlog-secondary-light: #86efac;
+  --color-ujlog-secondary-50: #f0fdf4;
+  --color-ujlog-secondary-100: #dcfce7;
+
+  --color-ujlog-gold: #f59e0b;
+
+  /* Warm neutrals */
+  --color-ujlog-ink: #221a12;
+  --color-ujlog-ink-soft: #7a6f61;
+  --color-ujlog-cream: #faf9f7;
+  --color-ujlog-cream-2: #ffffff;
+  --color-ujlog-border: #ede2d3;
+  --color-ujlog-bg: #ffffff;
+  --color-ujlog-light: #f0fdf4;
+
+  /* Status */
+  --color-ujlog-error: #dc2626;
+  --color-ujlog-error-light: #fef2f2;
+  --color-ujlog-success: #16a34a;
+  --color-ujlog-warning: #f59e0b;
+
+  /* Subject accent chips (rotating palette for matières/documents) */
+  --color-ujlog-chip-orange: #ff7a00;
+  --color-ujlog-chip-green: #16a34a;
+  --color-ujlog-chip-blue: #2563eb;
+  --color-ujlog-chip-purple: #7c3aed;
+  --color-ujlog-chip-rose: #e11d48;
+
+  --font-display: var(--font-body), ui-sans-serif, system-ui, sans-serif;
+  --font-body: "Inter", ui-sans-serif, system-ui, sans-serif;
+
+  /* Soft, premium shadows — never a flat heavy grey block */
+  --shadow-glow-orange: 0 10px 22px -14px rgba(224, 102, 0, 0.32);
+  --shadow-glow-green: 0 12px 26px -12px rgba(22, 163, 74, 0.32);
+  --shadow-soft: 0 1px 2px rgba(34, 26, 18, 0.04), 0 10px 24px -14px rgba(34, 26, 18, 0.14);
+  --shadow-card-hover: 0 4px 10px -2px rgba(34, 26, 18, 0.06), 0 16px 30px -14px rgba(34, 26, 18, 0.18);
+}
+
+@layer base {
+  body {
+    background-color: var(--color-ujlog-bg);
+    color: var(--color-ujlog-ink);
+    font-family: var(--font-body);
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-display);
+    letter-spacing: -0.02em;
+  }
+}
+
+@layer utilities {
+  /* Hero / CTA gradient — vivid orange, kept light enough to stay premium, not a dark-brown wash */
+  /* Zone orange = orange clair uni (plus de dégradé), contraste accessible avec le texte blanc,
+     couleur volontairement moins vive que le orange de marque pur (#ff7a00) — Phase 3 §7. */
+  .bg-terracotta-gradient {
+    background: var(--color-ujlog-primary-dark);
+  }
+  .shadow-glow-orange { box-shadow: var(--shadow-glow-orange); }
+  .shadow-glow-green { box-shadow: var(--shadow-glow-green); }
+  .shadow-soft-warm { box-shadow: var(--shadow-soft); }
+  .shadow-card-hover { box-shadow: var(--shadow-card-hover); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--color-ujlog-primary) 55%, white);
+  outline-offset: 3px;
+}
+
+button,
+a,
+input,
+select,
+textarea {
+  -webkit-tap-highlight-color: transparent;
+}
+
+@supports (padding: env(safe-area-inset-bottom)) {
+  .safe-area-bottom { padding-bottom: max(0.75rem, env(safe-area-inset-bottom)); }
+  .safe-area-top { padding-top: max(0.75rem, env(safe-area-inset-top)); }
+}
+
+/* UJLoG Étudiant · UI refresh inspired by Telegram's clarity, not a copy. */
+:root { --app-orange:#ff7a00; --app-orange-dark:#e56b00; --app-surface:#ffffff; --app-canvas:#f5f7fa; --app-line:#e6eaf0; --app-text:#17212b; --app-muted:#718096; }
+html { scroll-behavior:smooth; }
+body { background:var(--app-canvas); color:var(--app-text); }
+/* Cleaner surfaces and consistent, touch-friendly controls throughout authenticated pages. */
+input:not([type=checkbox]):not([type=radio]), select, textarea { border-radius:12px; transition:border-color .16s ease, box-shadow .16s ease, background .16s ease; }
+input:focus, select:focus, textarea:focus { border-color:var(--app-orange)!important; box-shadow:0 0 0 3px rgba(255,122,0,.13); outline:none; }
+button, a { transition-property:color,background-color,border-color,box-shadow,transform,opacity; transition-duration:160ms; }
+button:active { transform:scale(.985); }
+/* Card rhythm */
+.bg-white.rounded-2xl, .bg-white.rounded-3xl { border-color:var(--app-line); }
+/* Desktop sidebar: familiar conversation-app navigation rhythm. */
+@media (min-width:1024px) {
+  aside.hidden.lg\:flex { background:#fff; border-color:var(--app-line); padding:18px 14px; }
+  aside nav a { min-height:44px; border-radius:12px!important; }
+  aside nav a[class*=bg-stone-950] { background:#fff1e6!important; color:#bd5600!important; }
+  aside nav a[class*=bg-stone-950] span, aside nav a[class*=bg-stone-950] svg { color:#bd5600!important; }
+}
+/* Mobile navigation stays above the safe area and keeps large hit targets. */
+@media (max-width:1023px) {
+  body { background:#f5f7fa; }
+  main { scroll-margin-top:16px; }
+  .safe-area-bottom { padding-bottom:max(14px,env(safe-area-inset-bottom)); }
+}
+@media (prefers-color-scheme: dark) {
+  /* System theme is not forced: user-controlled theme styles can override these tokens. */
+}
+
+
+/* UJLoG Étudiant — couche d'interface cohérente, responsive et accessible. */
+:root {
+  color-scheme: light;
+  --tg-canvas: #f4f6f8;
+  --tg-panel: #ffffff;
+  --tg-panel-muted: #f8fafc;
+  --tg-border: #e4e9ef;
+  --tg-text: #17212b;
+  --tg-muted: #718096;
+  --tg-active: #fff0e2;
+  --tg-active-text: #c85b00;
+}
+html[data-theme="dark"] {
+  color-scheme: dark;
+  --tg-canvas: #17212b;
+  --tg-panel: #202b36;
+  --tg-panel-muted: #263442;
+  --tg-border: #344454;
+  --tg-text: #e8edf2;
+  --tg-muted: #a8b5c2;
+  --tg-active: #493322;
+  --tg-active-text: #ffb36b;
+}
+html[data-theme="light"] { color-scheme: light; }
+body { background-color: var(--tg-canvas); color: var(--tg-text); }
+::selection { background: rgba(255,122,0,.2); }
+a { text-underline-offset: 3px; }
+button, [role="button"] { touch-action: manipulation; }
+:where(input, select, textarea) { min-height: 42px; }
+:where(button, a, input, select, textarea):focus-visible {
+  outline: 3px solid rgba(255,122,0,.55);
+  outline-offset: 2px;
+}
+.app-surface { background: var(--tg-panel); border-color: var(--tg-border); color: var(--tg-text); }
+.app-surface-muted { background: var(--tg-panel-muted); }
+.app-muted { color: var(--tg-muted); }
+html[data-theme="dark"] body { background: var(--tg-canvas); color: var(--tg-text); }
+html[data-theme="dark"] .bg-white,
+html[data-theme="dark"] .bg-ujlog-cream-2 { background-color: var(--tg-panel) !important; }
+html[data-theme="dark"] .bg-stone-50,
+html[data-theme="dark"] .bg-gray-50,
+html[data-theme="dark"] .bg-slate-50,
+html[data-theme="dark"] .bg-ujlog-cream { background-color: var(--tg-panel-muted) !important; }
+html[data-theme="dark"] .text-ujlog-ink,
+html[data-theme="dark"] .text-gray-900,
+html[data-theme="dark"] .text-slate-900,
+html[data-theme="dark"] .text-stone-900 { color: var(--tg-text) !important; }
+html[data-theme="dark"] .text-ujlog-ink-soft,
+html[data-theme="dark"] .text-gray-500,
+html[data-theme="dark"] .text-gray-600,
+html[data-theme="dark"] .text-slate-500,
+html[data-theme="dark"] .text-stone-500 { color: var(--tg-muted) !important; }
+html[data-theme="dark"] .border-ujlog-border,
+html[data-theme="dark"] .border-gray-100,
+html[data-theme="dark"] .border-gray-200,
+html[data-theme="dark"] .border-stone-100,
+html[data-theme="dark"] .border-stone-200 { border-color: var(--tg-border) !important; }
+@media (prefers-reduced-motion: reduce) {
+  html[data-reduce-motion="true"] *, html[data-reduce-motion="true"] *::before,
+  html[data-reduce-motion="true"] *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
+}
+@media (max-width: 640px) {
+  .rounded-3xl { border-radius: 1.25rem; }
+  input:not([type=checkbox]):not([type=radio]), select, textarea { font-size: 16px; }
+}

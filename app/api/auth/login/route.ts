@@ -1,0 +1,156 @@
+import { NextResponse } from 'next/server';
+import { ACCOUNT_AUTH_LIMIT, enforcePayloadSize, enforceRateLimit, getClientIp } from '@/lib/rate-limiter';
+import { validateEmail, validatePassword } from '@/lib/security-validator';
+import { loginSchema, safeParseAuthBody } from '@/lib/auth-schemas';
+import { logSecurityEvent } from '@/lib/security-logger';
+import { createClient, createAdminClient } from '@/lib/supabase/server';
+import { ensureUserProfile, serializeSessionUser } from '@/lib/server-session';
+
+export async function POST(req: Request) {
+  const ip = getClientIp(req);
+
+  const payloadCheck = enforcePayloadSize(req, 'AUTH');
+  if (payloadCheck) return payloadCheck;
+
+  const rateLimitCheck = await enforceRateLimit(req, 'AUTH', {
+    discriminator: 'login',
+    customMessage: 'Trop de tentatives de connexion. Veuillez patienter avant de réessayer.',
+  });
+  if (rateLimitCheck) return rateLimitCheck;
+
+  try {
+    const body = await req.json().catch(() => ({}));
+    const { email, password } = body;
+
+    // Couche 1 — validation Zod structurelle.
+    const zodCheck = safeParseAuthBody(loginSchema, body);
+    if (!zodCheck.success) {
+      return NextResponse.json({ success: false, error: zodCheck.error }, { status: 400 });
+    }
+
+    const emailValidation = validateEmail(email);
+    if (!emailValidation.isValid) {
+      logSecurityEvent({
+        eventType: 'AUTH_LOGIN_FAILURE',
+        severity: 'INFO',
+        ip,
+        details: { reason: emailValidation.error },
+      });
+      return NextResponse.json(
+        { success: false, error: emailValidation.error || 'Veuillez saisir une adresse email valide.' },
+        { status: 400 }
+      );
+    }
+
+    const accountRateLimit = await enforceRateLimit(req, 'AUTH', {
+      discriminator: `login_target_${emailValidation.cleanEmail}`,
+      customMaxRequests: ACCOUNT_AUTH_LIMIT.maxRequests,
+      global: true,
+      customMessage: 'Trop de tentatives sur ce compte. Veuillez patienter.',
+    });
+    if (accountRateLimit) return accountRateLimit;
+
+    if (!password || typeof password !== 'string' || password.trim().length === 0) {
+      return NextResponse.json(
+        { success: false, error: 'Veuillez renseigner votre mot de passe.' },
+        { status: 400 }
+      );
+    }
+
+    // Authentification réelle via Supabase Auth (le mot de passe ne transite
+    // jamais par notre propre logique de hachage : Supabase s'en charge).
+    const supabase = await createClient();
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email: emailValidation.cleanEmail,
+      password,
+    });
+
+    const notConfirmed =
+      error && (error.code === 'email_not_confirmed' || /email not confirmed/i.test(error.message));
+    if (notConfirmed) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Veuillez confirmer votre adresse e-mail avant de vous connecter. Vérifiez votre boîte de réception (et les spams).',
+          code: 'EMAIL_NOT_CONFIRMED',
+        },
+        { status: 403 }
+      );
+    }
+
+    if (error || !data.user) {
+      logSecurityEvent({
+        eventType: 'AUTH_LOGIN_FAILURE',
+        severity: 'WARN',
+        ip,
+        userIdentifier: emailValidation.cleanEmail,
+        details: { reason: error?.message },
+      });
+
+      // Message volontairement générique : ne jamais révéler si l'email existe.
+      return NextResponse.json(
+        { success: false, error: 'Identifiants invalides ou compte non autorisé.' },
+        { status: 401 }
+      );
+    }
+
+    if (!data.user.email_confirmed_at) {
+      await supabase.auth.signOut();
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Veuillez confirmer votre adresse e-mail avant de vous connecter. Vérifiez votre boîte de réception.',
+          code: 'EMAIL_NOT_CONFIRMED',
+        },
+        { status: 403 }
+      );
+    }
+
+    // Récupère ou auto-provisionne le profil applicatif de façon garantie (contourne RLS)
+    const profile = await ensureUserProfile(data.user);
+
+    if (!profile) {
+      return NextResponse.json(
+        { success: false, error: 'Impossible de charger ou initialiser votre profil. Contactez le support.' },
+        { status: 500 }
+      );
+    }
+
+    if (profile.status !== 'active') {
+      await supabase.auth.signOut();
+      return NextResponse.json(
+        { success: false, error: 'Ce compte est suspendu ou en attente de validation.' },
+        { status: 403 }
+      );
+    }
+
+    const admin = createAdminClient();
+    await admin.from('profiles').update({ last_login_at: new Date().toISOString() }).eq('id', data.user.id);
+
+    logSecurityEvent({
+      eventType: 'AUTH_LOGIN_SUCCESS',
+      severity: 'INFO',
+      ip,
+      userIdentifier: profile.email,
+      details: { role: profile.role },
+    });
+
+    return NextResponse.json({
+      success: true,
+      message: 'Connexion réussie',
+      user: serializeSessionUser(profile),
+    });
+  } catch (error) {
+    logSecurityEvent({
+      eventType: 'SYSTEM_ERROR',
+      severity: 'ERROR',
+      ip,
+      details: { route: '/api/auth/login', error: (error as Error).message },
+    });
+
+    return NextResponse.json(
+      { success: false, error: 'Une erreur est survenue lors de la tentative de connexion.' },
+      { status: 500 }
+    );
+  }
+}
