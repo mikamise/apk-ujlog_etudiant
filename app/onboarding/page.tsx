@@ -10,53 +10,30 @@ const slides = [
   {
     key: 'welcome',
     icon: GraduationCap,
-<<<<<<< HEAD
-    eyebrow: 'Bienvenue sur UJLOG-etudiant',
-    title: 'Votre espace académique, enfin simple.',
-    subtitle: 'Retrouvez vos cours, TD, annales et ressources du Département de Géographie depuis un seul endroit.',
-=======
     eyebrow: 'UJLoG Étudiant · UFR SSH',
     title: 'Vos études, au même endroit.',
     subtitle: 'Un espace clair pour retrouver vos cours, TD, annales et ressources de l’UFR SSH, sans vous perdre dans les menus.',
->>>>>>> master
   },
   {
     key: 'courses',
     icon: BookOpen,
-<<<<<<< HEAD
-    eyebrow: 'Cours & ressources',
-    title: 'Tout votre contenu au même endroit.',
-    subtitle: 'Parcourez les niveaux, semestres et matières, puis ouvrez directement la ressource dont vous avez besoin.',
-=======
     eyebrow: 'Tout votre espace académique',
     title: 'Trouvez le bon cours en quelques gestes.',
     subtitle: 'Explorez vos niveaux, semestres et matières avec une navigation simple inspirée des applications de messagerie modernes.',
->>>>>>> master
   },
   {
     key: 'offline',
     icon: Download,
-<<<<<<< HEAD
-    eyebrow: 'Hors connexion',
-    title: 'Téléchargez avant de partir.',
-=======
     eyebrow: 'Toujours à portée de main',
     title: 'Vos documents, même sans réseau.',
->>>>>>> master
     subtitle: 'Enregistrez vos documents importants et consultez-les ensuite même lorsque le réseau n’est plus disponible.',
   },
   {
     key: 'install',
     icon: Smartphone,
-<<<<<<< HEAD
-    eyebrow: 'Comme une vraie application',
-    title: 'UJLOG est maintenant installé comme une application.',
-    subtitle: 'L’installation ouvre directement cet écran la première fois. Après l’onboarding, vous accéderez à votre espace de connexion.',
-=======
     eyebrow: 'Pensée pour le téléphone',
     title: 'Une expérience fluide, comme une application.',
     subtitle: 'Après cette courte présentation, connectez-vous ou créez votre compte pour accéder à votre espace étudiant.',
->>>>>>> master
   },
 ];
 
@@ -86,11 +63,7 @@ function Splash() {
     >
       <div className="h-12 w-12 rounded-2xl border border-ujlog-border bg-white p-2 shadow-soft-warm">
         <Image
-<<<<<<< HEAD
-          src="/icon-192.png"
-=======
           src="/icon-ssh.svg"
->>>>>>> master
           alt="UJLOG"
           width={32}
           height={32}
@@ -142,11 +115,7 @@ export default function OnboardingPage() {
         <div className="flex items-center gap-2.5">
           <div className="h-9 w-9 rounded-xl border border-ujlog-border bg-white p-1.5 shadow-soft-warm">
             <Image
-<<<<<<< HEAD
-              src="/icon-192.png"
-=======
               src="/icon-ssh.svg"
->>>>>>> master
               alt="UJLOG"
               width={24}
               height={24}

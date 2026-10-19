@@ -19,11 +19,7 @@ export default function ConditionsPage() {
           </Link>
           <div className="w-8 h-8 rounded-lg bg-white border border-ujlog-border overflow-hidden ml-auto">
             <div className="relative w-full h-full">
-<<<<<<< HEAD
-              <Image src="/logo-geographie.jpg" alt="Logo Département de Géographie" fill className="object-contain" referrerPolicy="no-referrer" />
-=======
               <Image src="/logo-geographie.jpg" alt="Logo UFR SSH" fill className="object-contain" referrerPolicy="no-referrer" />
->>>>>>> master
             </div>
           </div>
         </div>
@@ -37,11 +33,7 @@ export default function ConditionsPage() {
           <section>
             <h2 className="font-display text-lg font-bold mb-2">1. Objet de la plateforme</h2>
             <p className="text-ujlog-ink-soft">
-<<<<<<< HEAD
-              UJLOG Étudiant est une plateforme indépendante, réalisée par et pour les étudiants du Département de Géographie
-=======
               UJLOG Étudiant est une plateforme indépendante, réalisée par et pour les étudiants du UFR SSH
->>>>>>> master
               de l&apos;Université Jean Lorougnon Guédé (Daloa). Elle donne accès aux cours, travaux dirigés, sujets d&apos;examens
               et résultats classés par niveau, semestre et filière. Elle n&apos;est pas un service officiel de l&apos;université.
             </p>

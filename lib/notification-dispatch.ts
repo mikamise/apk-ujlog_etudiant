@@ -85,8 +85,6 @@ export async function notifyStudentsInScope(
   }));
   const { data: inserted } = await admin.from('notifications').insert(notifications).select('id, user_id');
 
-<<<<<<< HEAD
-=======
   // Envoi Web Push en arrière-plan lorsque les clés VAPID sont configurées.
   // Les abonnements expirés sont supprimés ; les échecs push ne bloquent jamais la publication du cours.
   if (inserted?.length && process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY && process.env.VAPID_SUBJECT) {
@@ -111,7 +109,6 @@ export async function notifyStudentsInScope(
     });
   }
 
->>>>>>> master
   // 2. File d'attente d'emails — uniquement pour ceux qui les ont activés,
   //    jamais d'envoi direct ici (voir lib/email.ts + le worker de traitement).
   if (params.emailTemplate) {

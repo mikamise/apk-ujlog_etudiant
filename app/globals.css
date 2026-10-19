@@ -104,8 +104,6 @@ textarea {
   .safe-area-bottom { padding-bottom: max(0.75rem, env(safe-area-inset-bottom)); }
   .safe-area-top { padding-top: max(0.75rem, env(safe-area-inset-top)); }
 }
-<<<<<<< HEAD
-=======
 
 /* UJLoG Étudiant · UI refresh inspired by Telegram's clarity, not a copy. */
 :root { --app-orange:#ff7a00; --app-orange-dark:#e56b00; --app-surface:#ffffff; --app-canvas:#f5f7fa; --app-line:#e6eaf0; --app-text:#17212b; --app-muted:#718096; }
@@ -201,4 +199,3 @@ html[data-theme="dark"] .border-stone-200 { border-color: var(--tg-border) !impo
   .rounded-3xl { border-radius: 1.25rem; }
   input:not([type=checkbox]):not([type=radio]), select, textarea { font-size: 16px; }
 }
->>>>>>> master

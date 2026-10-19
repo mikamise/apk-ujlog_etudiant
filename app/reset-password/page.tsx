@@ -27,11 +27,7 @@ function Shell({ children }: { children: React.ReactNode }) {
       <div className="bg-white w-full max-w-[420px] rounded-3xl shadow-soft-warm border border-ujlog-border p-7 sm:p-9 text-center">
         <div className="w-16 h-16 rounded-2xl bg-white shadow-md border border-ujlog-border flex items-center justify-center p-2 mx-auto mb-5">
           <div className="relative w-full h-full">
-<<<<<<< HEAD
-            <Image src="/logo-geographie.jpg" alt="Logo Département de Géographie" fill className="object-contain rounded-lg" referrerPolicy="no-referrer" />
-=======
             <Image src="/logo-geographie.jpg" alt="Logo UFR SSH" fill className="object-contain rounded-lg" referrerPolicy="no-referrer" />
->>>>>>> master
           </div>
         </div>
         {children}

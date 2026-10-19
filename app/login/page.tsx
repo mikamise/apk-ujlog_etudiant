@@ -134,22 +134,14 @@ function LoginFormContent() {
         <div className="relative z-10 space-y-8">
           <div className="w-40 h-40 rounded-3xl bg-white p-4 shadow-2xl">
             <div className="relative w-full h-full">
-<<<<<<< HEAD
-              <Image src="/logo-geographie.jpg" alt="Logo Département de Géographie" fill className="object-contain rounded-2xl" referrerPolicy="no-referrer" />
-=======
               <Image src="/logo-geographie.jpg" alt="Logo UFR SSH" fill className="object-contain rounded-2xl" referrerPolicy="no-referrer" />
->>>>>>> master
             </div>
           </div>
 
           <div>
             <h1 className="font-display text-4xl font-bold leading-tight">Bienvenue</h1>
             <p className="mt-3 text-sm text-white/85 leading-relaxed max-w-xs">
-<<<<<<< HEAD
-              Connectez-vous pour retrouver tous les cours, TD et sujets d&apos;examens du Département de Géographie.
-=======
               Connectez-vous pour retrouver tous les cours, TD et sujets d&apos;examens du UFR SSH.
->>>>>>> master
             </p>
           </div>
 
@@ -170,11 +162,7 @@ function LoginFormContent() {
         </div>
 
         <p className="relative z-10 text-[11px] text-white/60">
-<<<<<<< HEAD
-          © 2026 Département de Géographie, UJLoG Daloa
-=======
           © 2026 UFR SSH · UJLoG Daloa
->>>>>>> master
         </p>
       </div>
 
@@ -198,11 +186,7 @@ function LoginFormContent() {
             <div className="flex lg:hidden justify-center mb-5">
               <div className="w-24 h-24 rounded-3xl bg-white shadow-xl border border-ujlog-border flex items-center justify-center p-3">
                 <div className="relative w-full h-full">
-<<<<<<< HEAD
-                  <Image src="/logo-geographie.jpg" alt="Logo Département de Géographie" fill className="object-contain" referrerPolicy="no-referrer" />
-=======
                   <Image src="/logo-geographie.jpg" alt="Logo UFR SSH" fill className="object-contain" referrerPolicy="no-referrer" />
->>>>>>> master
                 </div>
               </div>
             </div>

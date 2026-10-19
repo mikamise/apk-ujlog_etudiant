@@ -198,22 +198,14 @@ export default function RegisterPage() {
         <div className="relative z-10 space-y-8">
           <div className="w-40 h-40 rounded-3xl bg-white p-4 shadow-2xl">
             <div className="relative w-full h-full">
-<<<<<<< HEAD
-              <Image src="/logo-geographie.jpg" alt="Logo Département de Géographie" fill className="object-contain rounded-2xl" referrerPolicy="no-referrer" />
-=======
               <Image src="/logo-geographie.jpg" alt="Logo UFR SSH" fill className="object-contain rounded-2xl" referrerPolicy="no-referrer" />
->>>>>>> master
             </div>
           </div>
 
           <div>
             <h1 className="font-display text-4xl font-bold leading-tight">Créez votre compte</h1>
             <p className="mt-3 text-sm text-white/85 leading-relaxed max-w-xs">
-<<<<<<< HEAD
-              Inscrivez-vous en tant qu&apos;étudiant du Département de Géographie pour accéder à tous les cours de votre niveau.
-=======
               Inscrivez-vous en tant qu&apos;étudiant du UFR SSH pour accéder à tous les cours de votre niveau.
->>>>>>> master
             </p>
           </div>
 
@@ -234,11 +226,7 @@ export default function RegisterPage() {
         </div>
 
         <p className="relative z-10 text-[11px] text-white/60">
-<<<<<<< HEAD
-          © 2026 Département de Géographie, UJLoG Daloa
-=======
           © 2026 UFR SSH · UJLoG Daloa
->>>>>>> master
         </p>
       </div>
 
@@ -262,11 +250,7 @@ export default function RegisterPage() {
             <div className="flex lg:hidden justify-center">
               <div className="w-24 h-24 rounded-3xl bg-white shadow-xl border border-ujlog-border flex items-center justify-center p-3">
                 <div className="relative w-full h-full">
-<<<<<<< HEAD
-                  <Image src="/logo-geographie.jpg" alt="Logo Département de Géographie" fill className="object-contain" referrerPolicy="no-referrer" />
-=======
                   <Image src="/logo-geographie.jpg" alt="Logo UFR SSH" fill className="object-contain" referrerPolicy="no-referrer" />
->>>>>>> master
                 </div>
               </div>
             </div>
@@ -462,11 +446,7 @@ export default function RegisterPage() {
                   className="mt-0.5 w-4 h-4 rounded border-ujlog-border text-ujlog-primary focus:ring-ujlog-primary/30 cursor-pointer"
                 />
                 <span className="text-xs text-ujlog-ink-soft leading-tight">
-<<<<<<< HEAD
-                  J&apos;atteste être étudiant au Département de Géographie de l&apos;Université Jean Lorougnon Guédé et j&apos;accepte les{' '}
-=======
                   J&apos;atteste être étudiant au UFR SSH de l&apos;Université Jean Lorougnon Guédé et j&apos;accepte les{' '}
->>>>>>> master
                   <Link href="/conditions" target="_blank" className="font-bold text-ujlog-primary hover:text-ujlog-primary-dark underline">
                     conditions d&apos;utilisation
                   </Link>.

@@ -1,9 +1,5 @@
 // UJLOG Étudiants - Service Worker PWA
-<<<<<<< HEAD
-const CACHE_VERSION = 'ujlog-etudiants-v3.0.0';
-=======
 const CACHE_VERSION = 'ujlog-etudiants-v3.1.0';
->>>>>>> master
 const CACHE_STATIC_NAME = `static-${CACHE_VERSION}`;
 const CACHE_PAGES_NAME = `pages-${CACHE_VERSION}`;
 const USER_DOWNLOADS_CACHE_NAME = 'ujlog-course-files-v1';
@@ -143,8 +139,6 @@ self.addEventListener('fetch', (event) => {
 
   if (url.pathname.startsWith('/api/')) return;
 });
-<<<<<<< HEAD
-=======
 
 
 // Notifications système envoyées par le serveur via Web Push (si configuré).
@@ -178,4 +172,3 @@ self.addEventListener('notificationclick', (event) => {
     if (self.clients.openWindow) return self.clients.openWindow(url);
   })());
 });
->>>>>>> master

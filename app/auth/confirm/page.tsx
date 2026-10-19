@@ -22,11 +22,7 @@ function Shell({ children }: { children: React.ReactNode }) {
         </Link>
         <div className="flex items-center gap-2.5">
           <div className="relative w-7 h-7 bg-white rounded-lg p-1 border border-ujlog-border">
-<<<<<<< HEAD
-            <Image src="/logo-geographie.jpg" alt="Logo Département de Géographie" fill className="object-contain rounded-md" referrerPolicy="no-referrer" />
-=======
             <Image src="/logo-geographie.jpg" alt="Logo UFR SSH" fill className="object-contain rounded-md" referrerPolicy="no-referrer" />
->>>>>>> master
           </div>
           <span className="font-display font-bold text-ujlog-ink tracking-tight text-sm">UJLOG Étudiant</span>
         </div>

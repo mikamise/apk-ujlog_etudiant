@@ -1,11 +1,7 @@
 {
   "name": "UJLOG Étudiants",
   "short_name": "UJLOG",
-<<<<<<< HEAD
-  "description": "Votre espace académique pour les cours et ressources du Département de Géographie de l’Université Jean Lorougnon Guédé de Daloa.",
-=======
   "description": "Votre espace académique pour les cours et ressources du UFR SSH de l’Université Jean Lorougnon Guédé de Daloa.",
->>>>>>> master
   "id": "/",
   "start_url": "/onboarding?source=pwa",
   "scope": "/",

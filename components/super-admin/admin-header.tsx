@@ -37,16 +37,6 @@ export function AdminHeader({
 
         <div className="flex items-center gap-3">
           <div className="relative w-10 h-10 bg-white rounded-2xl p-1.5 border border-ujlog-border shadow-soft-warm shrink-0">
-<<<<<<< HEAD
-            <Image src="/logo-geographie.jpg" alt="Logo Département de Géographie" fill className="object-contain rounded-xl" referrerPolicy="no-referrer" />
-          </div>
-          <div>
-            <h2 className="font-display text-sm font-bold text-ujlog-ink tracking-tight hidden sm:block">
-              Département de Géographie
-            </h2>
-            <p className="text-[10px] text-green-700 font-bold uppercase tracking-tight">
-              Espace de Contrôle Global • Dép. Géographie
-=======
             <Image src="/logo-geographie.jpg" alt="Logo UFR SSH" fill className="object-contain rounded-xl" referrerPolicy="no-referrer" />
           </div>
           <div>
@@ -55,7 +45,6 @@ export function AdminHeader({
             </h2>
             <p className="text-[10px] text-green-700 font-bold uppercase tracking-tight">
               Espace de Contrôle Global • UFR SSH
->>>>>>> master
             </p>
           </div>
         </div>

@@ -54,11 +54,7 @@ function ForgotPasswordContent() {
         <aside className="hidden lg:flex flex-col bg-ujlog-cream border-r border-ujlog-border p-9">
           <div className="w-24 h-24 rounded-3xl bg-white p-3 shadow-xl border border-ujlog-border mb-8">
             <div className="relative w-full h-full">
-<<<<<<< HEAD
-              <Image src="/logo-geographie.jpg" alt="Logo Département de Géographie" fill className="object-contain rounded-2xl" referrerPolicy="no-referrer" />
-=======
               <Image src="/logo-geographie.jpg" alt="Logo UFR SSH" fill className="object-contain rounded-2xl" referrerPolicy="no-referrer" />
->>>>>>> master
             </div>
           </div>
 

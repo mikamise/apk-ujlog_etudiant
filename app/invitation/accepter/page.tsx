@@ -154,11 +154,7 @@ export default function AcceptInvitationPage() {
     <div className="min-h-screen bg-white flex flex-col items-center justify-center p-4">
       <div className="w-16 h-16 rounded-2xl bg-white shadow-md border border-ujlog-border flex items-center justify-center p-2 mx-auto mb-5">
         <div className="relative w-full h-full">
-<<<<<<< HEAD
-          <Image src="/logo-geographie.jpg" alt="Logo Département de Géographie" fill className="object-contain rounded-lg" referrerPolicy="no-referrer" />
-=======
           <Image src="/logo-geographie.jpg" alt="Logo UFR SSH" fill className="object-contain rounded-lg" referrerPolicy="no-referrer" />
->>>>>>> master
         </div>
       </div>
       <Suspense fallback={<Loader2 className="w-6 h-6 animate-spin text-ujlog-primary" />}>
