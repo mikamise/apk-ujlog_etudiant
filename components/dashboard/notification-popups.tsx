@@ -37,7 +37,7 @@ export function NotificationPopups() {
 
     let stopped = false;
     const poll = async () => {
-      if (document.visibilityState === 'prerender') return;
+      if ((document.visibilityState as string) === 'prerender') return;
       try {
         const response = await fetch('/api/notifications?limit=20', { cache: 'no-store', credentials: 'same-origin' });
         if (response.status === 401 || !response.ok) return;
