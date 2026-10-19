@@ -45,7 +45,9 @@ export default function StudentArchivesPage() {
   const [selectedType, setSelectedType] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [downloadSuccessMessage, setDownloadSuccessMessage] = useState<string | null>(null);
- const [academicYears, setAcademicYears] = useState<string[]>([]);
+  const [academicYears, setAcademicYears] = useState<string[]>([]);
+  const [allCourses, setAllCourses] = useState<ArchivedCourse[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
   useEffect(() => {
     let active = true;
     fetch('/api/academic-years')
