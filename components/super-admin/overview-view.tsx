@@ -42,7 +42,6 @@ export function OverviewView({
   }[] = [
     {
       title: 'Nombre total d’étudiants',
-      value: stats.totalStudents.toLocaleString('fr-FR'),
       value: visibleStats.totalStudents.toLocaleString('fr-FR'),
       sub: 'Comptes actifs sur la plateforme',
       icon: Users,
@@ -51,7 +50,6 @@ export function OverviewView({
     },
     {
       title: 'Nombre de Délégués',
-      value: stats.totalDelegates.toLocaleString('fr-FR'),
       value: visibleStats.totalDelegates.toLocaleString('fr-FR'),
       sub: 'Délégués de filières et niveaux',
       icon: UserCheck,
@@ -60,7 +58,6 @@ export function OverviewView({
     },
     {
       title: 'Nombre de cours',
-      value: stats.totalCourses.toLocaleString('fr-FR'),
       value: visibleStats.totalCourses.toLocaleString('fr-FR'),
       sub: 'Supports CM, TD, Sujets & PVs',
       icon: BookOpen,
@@ -69,7 +66,6 @@ export function OverviewView({
     },
     {
       title: 'Publications récentes',
-      value: stats.recentPublicationsCount.toLocaleString('fr-FR'),
       value: visibleStats.recentPublicationsCount.toLocaleString('fr-FR'),
       sub: 'Ressources validées cette semaine',
       icon: Send,
